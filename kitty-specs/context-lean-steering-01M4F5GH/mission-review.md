@@ -188,6 +188,25 @@ not block the mission's core delivery.
 5. **Landing note** — the generated artifacts were regenerated at landing (`763fc108c`);
    keep them fresh on any further CLI change.
 
+## Follow-up branch: portable enforcement (`feat/portable-steer-gates`)
+
+After this review, the two enforcement-portability findings were fixed on
+`feat/portable-steer-gates` and validated in the `libgaffer_api_spec` clean room (a
+non-spec-kitty consumer repository):
+
+- **RISK-3 caveat 2 (gate not portable) — FIXED.** Each gate now applies only when the repo
+  actually has the check: `ruff` needs a ruff config; `terminology`/`architectural` need the
+  canonical nodes; `protected-branch` is opt-in via `protection.protected_branches`; a new
+  `repo-gate` runs whatever the repo declares in `steer.gate_command`; `engine-guard` skips
+  without a Mission. Missing tools still fail loudly.
+- **RISK-3 caveat 1 (`finished` != work done) — FIXED.** `steer loop` refuses `finish` until
+  the sandbox task is complete (the test passes and its file is unmodified).
+- **RISK-1 (`tiers.py` dead code) — FIXED.** `steer loop` now routes through
+  `tiers.LocalProvider`, so `tests/architectural/test_no_dead_modules.py` is green.
+
+Clean-room evidence: `steer check` → clean; `steer loop` → finished 6/12 with the task
+actually completed, 3/3 runs; spec-kitty's own `steer check` still runs ruff + the nodes.
+
 ## Retrospective Reminder
 
 The canonical post-merge sequence is: **mission review → author or verify retrospective →
