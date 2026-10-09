@@ -148,7 +148,8 @@
       "model": "__resolved_model_absent__",
       "notes": [
         "Ready for review",
-        "Addressed review feedback: description shortened to <=180 chars"
+        "Addressed review feedback: description shortened to <=180 chars",
+        "Review passed: description fixed (164 chars, in 50-180 band); description gate 0/631 + 672 docs tests green; ADR substance byte-identical; no source change"
       ],
       "provider": "__resolved_provider_absent__",
       "review": null,
