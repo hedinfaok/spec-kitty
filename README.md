@@ -158,6 +158,7 @@ For the full walkthrough, see [Your First Mission](docs/guides/tutorials/your-fi
 Start here:
 
 - [Getting Started](docs/guides/tutorials/getting-started.md)
+- [Getting Started with Lean Steering](docs/guides/tutorials/lean-steering.md)
 - [Your First Mission](docs/guides/tutorials/your-first-mission.md)
 - [Orchestrator Quickstart](docs/guides/tutorials/orchestrator-quickstart.md)
 - [CLI Command Reference](docs/api/cli-commands.md)

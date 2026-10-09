@@ -11,6 +11,7 @@ type: explanation
 Learning-oriented walkthroughs. Start here if you are new to Spec Kitty and want to learn by doing.
 
 - [Getting Started with Spec Kitty](getting-started.md) — Install Spec Kitty 3.2, initialize a project, and create your first mission with a guided beginner workflow.
+- [Getting Started with Lean Steering](lean-steering.md) — Steer an agent with a ~1 KB kernel and a per-step capsule instead of the full standing corpus.
 - [Your First Mission: Complete Workflow](your-first-mission.md) — Walk through a complete Spec Kitty 3.2 mission from specification through plan, tasks, implementation, review, and merge.
 - [Understanding Spec Kitty Missions](missions-overview.md) — Tutorial for Understanding Spec Kitty Missions in Spec Kitty 3.2: Spec Kitty supports four mission types that tailor the workflow and artifacts to your goal.
 - [Multi-Agent Parallel Development](multi-agent-workflow.md) — Tutorial for Multi-Agent Parallel Development in Spec Kitty 3.2: Learn how to coordinate multiple AI agents working on different work packages simultaneously.
