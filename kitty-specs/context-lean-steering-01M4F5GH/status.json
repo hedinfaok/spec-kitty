@@ -180,7 +180,8 @@
       "last_transition_at": "2026-10-09T04:09:18.570725+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "Ready for review"
+        "Ready for review",
+        "Review passed: tiers.py is a deterministic, data-driven T0-T3 policy (pure resolve_tier, no state/clock); LocalProvider reuses driver's HttpModelClient (stdlib only, no new dep) and raises typed errors on unreachable (ModelUnavailableError), unloaded (ModelNotLoadedError via /v1/models probe), and empty/malformed (EmptyModelResponseError) - never an empty string; T0 completion raises TierPolicyError. 145 steering tests pass (34 in test_tiers.py), non-vacuous. WP06 commit e6af49dec touched only tiers.py + test_tiers.py; driver.py, steer.py and engine modules unchanged. Note: tiers.py has no production caller yet (standalone library seam, no CLI subtask in the plan; driver.py frozen by WP scope) - tracked as an observation, not a blocker."
       ],
       "provider": "__resolved_provider_absent__",
       "review_result": {
