@@ -34,12 +34,7 @@ MISSION = "context-lean-steering-01M4F5GH"
 # The multi-step sandbox task (two bugs; the test file must stay unmodified)
 # ---------------------------------------------------------------------------
 
-TASK_APP = (
-    "def add(a, b):\n    return a - b\n\n\n"
-    "def mul(a, b):\n    return a + b\n\n\n"
-    "def sub(a, b):\n    return a + b\n\n\n"
-    "def clamp(x, lo, hi):\n    return x\n"
-)
+TASK_APP = "def add(a, b):\n    return a - b\n\n\ndef mul(a, b):\n    return a + b\n\n\ndef sub(a, b):\n    return a + b\n\n\ndef clamp(x, lo, hi):\n    return x\n"
 TASK_TEST = (
     "from calc import add, mul, sub, clamp\n\n\n"
     "def test_add():\n    assert add(2, 3) == 5\n\n\n"
