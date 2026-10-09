@@ -130,7 +130,11 @@ justified by this spike. Recommended shape:
    divergence in a "friendly fork".
 3. **Compliance experiment (done):** [`compliance-experiment.md`](compliance-experiment.md) —
    fresh agents oriented correctly from kernel + capsule (8/8, twice), with both controls
-   holding. The open question is now long-horizon behavioural compliance, not orientation.
+   holding, on remote and local models including a typical 9B Q4.
+4. **Long-horizon loop test (done):** [`lean-loop-test.md`](lean-loop-test.md) — a consumer
+   9B completed a bounded WP end to end through the lean loop, 4/4, protocol intact, at
+   ~879 tokens for the whole episode. One driver fix to land first: tolerate batched tool
+   calls.
 
 ## Reproduce
 
