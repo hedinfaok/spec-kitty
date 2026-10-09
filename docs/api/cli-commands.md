@@ -191,112 +191,162 @@ Stable codes that appear in the output. Match on the code, not on the surroundin
  Validate mission readiness before merging to main.
 
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
-│ --mission                                        TEXT  Mission slug to       │
-│                                                        accept                │
-│ --mode                                           TEXT  Acceptance mode:      │
-│                                                        auto, pr, local, or   │
-│                                                        checklist             │
-│                                                        [default: auto]       │
-│ --actor                                          TEXT  Name to record as the │
-│                                                        acceptance actor      │
-│ --test                                           TEXT  Validation command    │
-│                                                        executed (repeatable) │
-│ --json                                                 Emit JSON instead of  │
-│                                                        formatted text        │
-│ --lenient                                              Skip strict metadata  │
-│                                                        validation and        │
-│                                                        downgrade missing     │
-│                                                        path-convention       │
-│                                                        checks to warnings    │
-│ --no-commit                                            Report acceptance     │
-│                                                        readiness without     │
-│                                                        writing metadata or   │
-│                                                        status changes        │
-│ --diagnose                                             Diagnose acceptance   │
-│                                                        blockers without      │
-│                                                        writing metadata or   │
-│                                                        matrix artifacts      │
-│ --allow-fail                                           Return checklist even │
-│                                                        when issues remain    │
-│ --normalize-encoding      --no-normalize-enc…          Repair                │
-│                                                        acceptance-artifact   │
-│                                                        encoding              │
-│                                                        (Windows-1252/Latin-1 │
-│                                                        -> UTF-8) before      │
-│                                                        validating.           │
-│                                                        [default:             │
-│                                                        no-normalize-encodin… │
-│ --owned-checkout                                 PATH  Run against an owned  │
-│                                                        checkout: a linked    │
-│                                                        checkout that owns    │
-│                                                        this mission. Refuses │
-│                                                        the repository root   │
-│                                                        checkout, lane        │
-│                                                        worktrees and         │
-│                                                        coordination          │
-│                                                        worktrees.            │
-│ --merge-commit                                   SHA   With --mode pr:       │
-│                                                        record this PR merge  │
-│                                                        commit as the         │
-│                                                        mission's post-merge  │
-│                                                        review baseline. The  │
-│                                                        commit is verified    │
-│                                                        against git before    │
-│                                                        anything is written — │
-│                                                        it must carry         │
-│                                                        kitty-specs/<slug>/m… │
-│                                                        its first parent must │
-│                                                        not, and it must have │
-│                                                        landed on the target  │
-│                                                        branch. Every landing │
-│                                                        shape additionally    │
-│                                                        needs                 │
-│                                                        --attest-first-landi… │
-│ --target-branch                                  TEXT  With --merge-commit:  │
-│                                                        the branch the PR     │
-│                                                        merged into (the PR's │
-│                                                        base branch).         │
-│                                                        Defaults to the       │
-│                                                        mission's declared    │
-│                                                        target_branch, else   │
-│                                                        the repository's      │
-│                                                        primary branch.       │
-│ --attest-first-land…                                   With --merge-commit:  │
-│                                                        attest that the       │
-│                                                        supplied commit's     │
-│                                                        first parent is the   │
-│                                                        pre-landing target    │
-│                                                        tip — for a           │
-│                                                        two-parent merge      │
-│                                                        commit, that the      │
-│                                                        merge was performed   │
-│                                                        ON the target branch  │
-│                                                        (an internal merge    │
-│                                                        fast-forwarded onto   │
-│                                                        the target is         │
-│                                                        graph-identical, and  │
-│                                                        its first parent is   │
-│                                                        an implementation     │
-│                                                        commit); for a        │
-│                                                        single-parent landing │
-│                                                        (squash or            │
-│                                                        corpus-first stack),  │
-│                                                        that it was the first │
-│                                                        commit of the         │
-│                                                        landing. Required for │
-│                                                        every landing shape:  │
-│                                                        git cannot prove      │
-│                                                        either, and a wrong   │
-│                                                        anchor silently       │
-│                                                        under-scans the       │
-│                                                        dead-code gate. The   │
-│                                                        attestation is        │
-│                                                        recorded in           │
-│                                                        pr_merge_evidence,    │
-│                                                        never presented as a  │
-│                                                        git proof.            │
-│ --help                -h                               Show this message and │
-│                                                        exit.                 │
+│ --mission                                 TEXT              Mission slug to  │
+│                                                             accept           │
+│ --mode                                    TEXT              Acceptance mode: │
+│                                                             auto, pr, local, │
+│                                                             or checklist     │
+│                                                             [default: auto]  │
+│ --actor                                   TEXT              Name to record   │
+│                                                             as the           │
+│                                                             acceptance actor │
+│ --test                                    TEXT              Validation       │
+│                                                             command executed │
+│                                                             (repeatable)     │
+│ --json                                                      Emit JSON        │
+│                                                             instead of       │
+│                                                             formatted text   │
+│ --lenient                                                   Skip strict      │
+│                                                             metadata         │
+│                                                             validation and   │
+│                                                             downgrade        │
+│                                                             missing          │
+│                                                             path-convention  │
+│                                                             checks to        │
+│                                                             warnings         │
+│ --no-commit                                                 Report           │
+│                                                             acceptance       │
+│                                                             readiness        │
+│                                                             without writing  │
+│                                                             metadata or      │
+│                                                             status changes   │
+│ --diagnose                                                  Diagnose         │
+│                                                             acceptance       │
+│                                                             blockers without │
+│                                                             writing metadata │
+│                                                             or matrix        │
+│                                                             artifacts        │
+│ --allow-fail                                                Return checklist │
+│                                                             even when issues │
+│                                                             remain           │
+│ --normalize-enco…      --no-normalize…                      Repair           │
+│                                                             acceptance-arti… │
+│                                                             encoding         │
+│                                                             (Windows-1252/L… │
+│                                                             -> UTF-8) before │
+│                                                             validating.      │
+│                                                             [default:        │
+│                                                             no-normalize-en… │
+│ --owned-checkout                          PATH              Run against an   │
+│                                                             owned checkout:  │
+│                                                             a linked         │
+│                                                             checkout that    │
+│                                                             owns this        │
+│                                                             mission. Refuses │
+│                                                             the repository   │
+│                                                             root checkout,   │
+│                                                             lane worktrees   │
+│                                                             and coordination │
+│                                                             worktrees.       │
+│ --origin-check                            [enforce|warn|of  Refuse (enforce, │
+│                                           f]                the default) or  │
+│                                                             only warn (warn) │
+│                                                             when the         │
+│                                                             mission's status │
+│                                                             evidence is      │
+│                                                             behind or        │
+│                                                             unreachable on   │
+│                                                             its remote; off  │
+│                                                             contacts nothing │
+│                                                             and accepts      │
+│                                                             stale evidence.  │
+│                                                             Overrides        │
+│                                                             SPEC_KITTY_ORIG… │
+│                                                             --no-commit and  │
+│                                                             --diagnose       │
+│                                                             always warn.     │
+│ --merge-commit                            SHA               With --mode pr:  │
+│                                                             record this PR   │
+│                                                             merge commit as  │
+│                                                             the mission's    │
+│                                                             post-merge       │
+│                                                             review baseline. │
+│                                                             The commit is    │
+│                                                             verified against │
+│                                                             git before       │
+│                                                             anything is      │
+│                                                             written — it     │
+│                                                             must carry       │
+│                                                             kitty-specs/<sl… │
+│                                                             its first parent │
+│                                                             must not, and it │
+│                                                             must have landed │
+│                                                             on the target    │
+│                                                             branch. Every    │
+│                                                             landing shape    │
+│                                                             additionally     │
+│                                                             needs            │
+│                                                             --attest-first-… │
+│ --target-branch                           TEXT              With             │
+│                                                             --merge-commit:  │
+│                                                             the branch the   │
+│                                                             PR merged into   │
+│                                                             (the PR's base   │
+│                                                             branch).         │
+│                                                             Defaults to the  │
+│                                                             mission's        │
+│                                                             declared         │
+│                                                             target_branch,   │
+│                                                             else the         │
+│                                                             repository's     │
+│                                                             primary branch.  │
+│ --attest-first-l…                                           With             │
+│                                                             --merge-commit:  │
+│                                                             attest that the  │
+│                                                             supplied         │
+│                                                             commit's first   │
+│                                                             parent is the    │
+│                                                             pre-landing      │
+│                                                             target tip — for │
+│                                                             a two-parent     │
+│                                                             merge commit,    │
+│                                                             that the merge   │
+│                                                             was performed ON │
+│                                                             the target       │
+│                                                             branch (an       │
+│                                                             internal merge   │
+│                                                             fast-forwarded   │
+│                                                             onto the target  │
+│                                                             is               │
+│                                                             graph-identical, │
+│                                                             and its first    │
+│                                                             parent is an     │
+│                                                             implementation   │
+│                                                             commit); for a   │
+│                                                             single-parent    │
+│                                                             landing (squash  │
+│                                                             or corpus-first  │
+│                                                             stack), that it  │
+│                                                             was the first    │
+│                                                             commit of the    │
+│                                                             landing.         │
+│                                                             Required for     │
+│                                                             every landing    │
+│                                                             shape: git       │
+│                                                             cannot prove     │
+│                                                             either, and a    │
+│                                                             wrong anchor     │
+│                                                             silently         │
+│                                                             under-scans the  │
+│                                                             dead-code gate.  │
+│                                                             The attestation  │
+│                                                             is recorded in   │
+│                                                             pr_merge_eviden… │
+│                                                             never presented  │
+│                                                             as a git proof.  │
+│ --help             -h                                       Show this        │
+│                                                             message and      │
+│                                                             exit.            │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 
@@ -1460,6 +1510,27 @@ _Charter pack management commands._
 │                                                            report (required  │
 │                                                            with              │
 │                                                            --release-branch… │
+│ --origin-check                            [enforce|warn|o  Origin freshness  │
+│                                           ff]              check before      │
+│                                                            anything lands:   │
+│                                                            enforce (the      │
+│                                                            default) refuses  │
+│                                                            when the remote's │
+│                                                            status log or an  │
+│                                                            approved lane     │
+│                                                            branch of this    │
+│                                                            Mission is ahead  │
+│                                                            of this clone, or │
+│                                                            the remote cannot │
+│                                                            be reached; warn  │
+│                                                            reports the same  │
+│                                                            findings and      │
+│                                                            continues; off    │
+│                                                            contacts nothing  │
+│                                                            and accepts stale │
+│                                                            evidence.         │
+│                                                            Overrides         │
+│                                                            SPEC_KITTY_ORIGI… │
 │ --help             -h                                      Show this message │
 │                                                            and exit.         │
 ╰──────────────────────────────────────────────────────────────────────────────╯
@@ -4335,9 +4406,18 @@ _Machine-contract API for external orchestrators (JSON-first)_
  Accept a mission after all WPs are approved or done.
 
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
-│ *  --mission          TEXT  Mission slug [required]                          │
-│ *  --actor            TEXT  Actor identity [required]                        │
-│    --help     -h            Show this message and exit.                      │
+│ *  --mission               TEXT                Mission slug [required]       │
+│ *  --actor                 TEXT                Actor identity [required]     │
+│    --origin-check          [enforce|warn|off]  Refuse (enforce, the default) │
+│                                                or only warn (warn) when the  │
+│                                                mission's status evidence or  │
+│                                                approved lanes are behind or  │
+│                                                unreachable on their remote;  │
+│                                                off contacts nothing and      │
+│                                                accepts stale evidence.       │
+│                                                Overrides                     │
+│                                                SPEC_KITTY_ORIGIN_CHECK.      │
+│    --help          -h                          Show this message and exit.   │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 
@@ -4490,13 +4570,25 @@ _Machine-contract API for external orchestrators (JSON-first)_
  Consolidate a lane-based mission into target.
 
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
-│ *  --mission           TEXT  Mission slug [required]                         │
-│    --target            TEXT  Target branch to merge into (auto-detected from │
-│                              meta.json)                                      │
-│    --strategy          TEXT  Merge strategy: merge, squash, or rebase        │
-│                              [default: merge]                                │
-│    --push                    Push target branch after merge                  │
-│    --help      -h            Show this message and exit.                     │
+│ *  --mission               TEXT                Mission slug [required]       │
+│    --target                TEXT                Target branch to merge into   │
+│                                                (auto-detected from           │
+│                                                meta.json)                    │
+│    --strategy              TEXT                Merge strategy: merge,        │
+│                                                squash, or rebase             │
+│                                                [default: merge]              │
+│    --push                                      Push target branch after      │
+│                                                merge                         │
+│    --origin-check          [enforce|warn|off]  Refuse (enforce, the default) │
+│                                                or only warn (warn) when the  │
+│                                                mission's status evidence or  │
+│                                                approved lanes are behind or  │
+│                                                unreachable on their remote;  │
+│                                                off contacts nothing and      │
+│                                                accepts stale evidence.       │
+│                                                Overrides                     │
+│                                                SPEC_KITTY_ORIGIN_CHECK.      │
+│    --help          -h                          Show this message and exit.   │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 
@@ -4889,7 +4981,9 @@ _Machine-contract API for external orchestrators (JSON-first)_
 │ *  --to                                  TEXT  Target lane [required]        │
 │ *  --actor                               TEXT  Actor identity [required]     │
 │    --note                                TEXT  Reason/note for the           │
-│                                                transition                    │
+│                                                transition (required with     │
+│                                                --force out of in_review or   │
+│                                                approved)                     │
 │    --policy                              TEXT  Policy metadata JSON          │
 │                                                (required for run-affecting   │
 │                                                lanes)                        │
@@ -5417,6 +5511,120 @@ _Emit the open-Ops reminder for the Claude Code Stop hook._
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 
+## spec-kitty steer
+
+_Lean steering: standing kernel, per-step capsule and binding gates._
+
+```
+ Usage: spec-kitty steer [OPTIONS] COMMAND [ARGS]...
+
+ Lean steering: standing kernel, per-step capsule and binding gates.
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help  -h        Show this message and exit.                                │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ kernel   Print the standing steering kernel (<= 1024 bytes; byte-stable      │
+│          across calls).                                                      │
+│ capsule  Emit the bounded per-step capsule derived from Mission state        │
+│          (WP03).                                                             │
+│ fetch    Fetch one doctrine body on demand from canonical sources (WP02).    │
+│ check    Run the binding machine gates; any problem exits non-zero (WP04).   │
+│ measure  Report standing and per-step steering sizes against a baseline      │
+│          (WP07).                                                             │
+│ loop     Run the driver loop: render kernel + capsule, execute each action   │
+│          (WP05).                                                             │
+╰──────────────────────────────────────────────────────────────────────────────╯
+```
+
+## spec-kitty steer capsule
+
+```
+ Usage: spec-kitty steer capsule [OPTIONS]
+
+ Emit the bounded per-step capsule derived from Mission state (WP03).
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --mission          TEXT  Mission handle (mission_id / mid8 / slug).          │
+│ --json                   Emit JSON.                                          │
+│ --help     -h            Show this message and exit.                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+```
+
+## spec-kitty steer check
+
+```
+ Usage: spec-kitty steer check [OPTIONS]
+
+ Run the binding machine gates; any problem exits non-zero (WP04).
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --mission          TEXT  Mission handle (mission_id / mid8 / slug).          │
+│ --json                   Emit JSON.                                          │
+│ --help     -h            Show this message and exit.                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+```
+
+## spec-kitty steer fetch
+
+```
+ Usage: spec-kitty steer fetch [OPTIONS] SELECTOR
+
+ Fetch one doctrine body on demand from canonical sources (WP02).
+
+╭─ Arguments ──────────────────────────────────────────────────────────────────╮
+│ *    selector      TEXT  Doctrine selector, e.g. directive:DIRECTIVE_030.    │
+│                          [required]                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --json            Emit JSON.                                                 │
+│ --help  -h        Show this message and exit.                                │
+╰──────────────────────────────────────────────────────────────────────────────╯
+```
+
+## spec-kitty steer kernel
+
+```
+ Usage: spec-kitty steer kernel [OPTIONS]
+
+ Print the standing steering kernel (<= 1024 bytes; byte-stable across calls).
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --json            Emit JSON {bytes, text}.                                   │
+│ --help  -h        Show this message and exit.                                │
+╰──────────────────────────────────────────────────────────────────────────────╯
+```
+
+## spec-kitty steer loop
+
+```
+ Usage: spec-kitty steer loop [OPTIONS]
+
+ Run the driver loop: render kernel + capsule, execute each action (WP05).
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --mission          TEXT     Mission handle (mission_id / mid8 / slug).       │
+│ --model            TEXT     Model id to drive.                               │
+│ --turns            INTEGER  Maximum number of driver turns. [default: 1]     │
+│ --json                      Emit JSON.                                       │
+│ --help     -h               Show this message and exit.                      │
+╰──────────────────────────────────────────────────────────────────────────────╯
+```
+
+## spec-kitty steer measure
+
+```
+ Usage: spec-kitty steer measure [OPTIONS]
+
+ Report standing and per-step steering sizes against a baseline (WP07).
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --mission          TEXT  Mission handle (mission_id / mid8 / slug).          │
+│ --json                   Emit JSON.                                          │
+│ --help     -h            Show this message and exit.                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+```
+
 ## spec-kitty tasks
 
 ```
@@ -5813,7 +6021,9 @@ _Tracker synchronization commands_
 │ --project                     Restrict to current-project compat +           │
 │                               migrations (FR-015)                            │
 │ --yes           -y            Non-interactive confirmation; alias for        │
-│                               --force (FR-017).                              │
+│                               --force (FR-017). Upgrade never runs the       │
+│                               mission-state repair; use `spec-kitty doctor   │
+│                               mission-state --fix`.                          │
 │ --no-nag                      Suppress upgrade-nag output explicitly         │
 │ --help                        Show this message and exit.                    │
 ╰──────────────────────────────────────────────────────────────────────────────╯

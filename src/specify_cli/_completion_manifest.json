@@ -1539,6 +1539,43 @@
    "hidden": false,
    "deprecated": false
   },
+  "steer": {
+   "help": "Lean steering: standing kernel, per-step capsule and binding gates.",
+   "hidden": false,
+   "deprecated": false,
+   "commands": {
+    "kernel": {
+     "help": "Print the standing steering kernel (<= 1024 bytes; byte-stable across calls).",
+     "hidden": false,
+     "deprecated": false
+    },
+    "capsule": {
+     "help": "Emit the bounded per-step capsule derived from Mission state (WP03).",
+     "hidden": false,
+     "deprecated": false
+    },
+    "fetch": {
+     "help": "Fetch one doctrine body on demand from canonical sources (WP02).",
+     "hidden": false,
+     "deprecated": false
+    },
+    "check": {
+     "help": "Run the binding machine gates; any problem exits non-zero (WP04).",
+     "hidden": false,
+     "deprecated": false
+    },
+    "measure": {
+     "help": "Report standing and per-step steering sizes against a baseline (WP07).",
+     "hidden": false,
+     "deprecated": false
+    },
+    "loop": {
+     "help": "Run the driver loop: render kernel + capsule, execute each action (WP05).",
+     "hidden": false,
+     "deprecated": false
+    }
+   }
+  },
   "tasks": {
    "help": "Finalize tasks metadata after task generation.",
    "hidden": false,
