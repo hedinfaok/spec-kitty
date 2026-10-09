@@ -482,6 +482,12 @@ def run(mission: str | None, *, model: str | None = None, turns: int = DEFAULT_T
         fetch=lambda selector: _default_fetch(repo_root, selector),
     )
     client = HttpModelClient(model=model or DEFAULT_MODEL)
+    from specify_cli.steering import tiers
+
+    provider = tiers.LocalProvider(client=client)
+    tier = provider.resolve("loop")
+    if not tier.uses_model:
+        raise tiers.TierPolicyError(f"the loop step routes to {tier.label}; a model is required")
     report = drive(mission=mission or "", model=client.model, ask=client, toolbox=toolbox, seed=seed, turns=turns)
     render_report(report, json_output=json_output)
 
