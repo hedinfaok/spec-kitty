@@ -1,0 +1,17 @@
+{
+  "rows": {
+    "#5005": {
+      "evidence_ref": "kitty-specs/context-lean-steering-01M4F5GH/tasks/WP07-steering-context-measurement.md: cited only as the provenance of the standing/per-step baseline constants; this mission owes no work on #5005 itself.",
+      "fr": null,
+      "nfr": null,
+      "repo": null,
+      "sc": null,
+      "scope": null,
+      "source_file": null,
+      "title": null,
+      "verdict": "not-applicable",
+      "wp": "WP01"
+    }
+  },
+  "schema_version": 1
+}
