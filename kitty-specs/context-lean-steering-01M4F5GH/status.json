@@ -88,7 +88,8 @@
       "last_transition_at": "2026-10-09T03:33:08.389064+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "Ready for review"
+        "Ready for review",
+        "Review passed: capsule VO+render; live byte budget 474 (911 with resolved WP03) <= 2048; derived via query_current_state (next --json query path), steer.py untouched, commit touches only capsule.py+test; pointers-only validated vs WP02 index (bodies 4-12KB, 0 inlined); completeness test non-vacuous (verified by mutation); no engine module changed; no new dep."
       ],
       "provider": "__resolved_provider_absent__",
       "review_result": {
