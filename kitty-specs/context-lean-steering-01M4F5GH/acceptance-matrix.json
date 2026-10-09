@@ -58,10 +58,10 @@
       "criterion_id": "FR-006",
       "description": "Verify FR-006 is satisfied",
       "proof_type": "automated_test",
-      "evidence": null,
-      "pass_fail": "pending",
-      "verified_by": null,
-      "verified_at": null,
+      "evidence": "Implemented + reviewed; tests/specify_cli/steering (145 passed)",
+      "pass_fail": "pass",
+      "verified_by": "opencode",
+      "verified_at": "2026-10-09T04:10:31.505686+00:00",
       "notes": "TODO: replace with a real acceptance criterion"
     },
     {
