@@ -95,10 +95,10 @@ And the retrieval path is engine-provided and works on demand — for example
 
 ## What it did NOT prove (residuals)
 
-- **No LLM was driven.** The spike measures steering *size* and gate *enforcement*; it
-  does not measure whether a model follows a 1 KB kernel + capsule as reliably as the
-  standing corpus. That is the natural next experiment (fresh-context agent given only
-  kernel + capsule).
+- **No LLM was driven at task level.** The spike measures steering *size* and gate
+  *enforcement*; the follow-up `compliance-experiment.md` shows a fresh agent can *orient*
+  correctly from kernel + capsule, but long-horizon behavioural compliance (a full
+  edit/verify loop) is still untested.
 - **The pointer map is illustrative** (`POINTERS` in `sk.py`), not derived from the
   engine's DRG or the WP's agent profile. Production wiring must make it engine-derived.
 - **The gate set is thin** (protected branch + engine guard failures). The full gate
@@ -128,8 +128,9 @@ justified by this spike. Recommended shape:
 2. **One explicit divergence to negotiate:** the requires-inline guarantee (ADR
    2026-07-28-1). Either amend the ADR upstream, or carry it as the single, documented
    divergence in a "friendly fork".
-3. **Next experiment:** a fresh-context compliance test (drive a model with only kernel +
-   capsule) before committing to the shape.
+3. **Compliance experiment (done):** [`compliance-experiment.md`](compliance-experiment.md) —
+   fresh agents oriented correctly from kernel + capsule (8/8, twice), with both controls
+   holding. The open question is now long-horizon behavioural compliance, not orientation.
 
 ## Reproduce
 
