@@ -1,7 +1,7 @@
 {
-  "event_count": 20,
-  "last_event_id": "01M4F9A960ND7606VC43B4F89P",
-  "materialized_at": "2026-10-09T02:54:13.184149+00:00",
+  "event_count": 21,
+  "last_event_id": "01M4F9TRDET6FP8HGZ1BHZ5QSM",
+  "materialized_at": "2026-10-09T03:03:13.070186+00:00",
   "mission_number": "",
   "mission_slug": "context-lean-steering-01M4F5GH",
   "mission_type": "software-dev",
@@ -12,8 +12,8 @@
     "canceled": 0,
     "claimed": 0,
     "done": 0,
-    "for_review": 1,
-    "in_progress": 2,
+    "for_review": 2,
+    "in_progress": 1,
     "in_review": 0,
     "planned": 4
   },
@@ -79,14 +79,21 @@
       "agent_profile_version": "1.0",
       "force_count": 0,
       "implementer_of_record": "opencode",
-      "lane": "in_progress",
-      "last_event_id": "01M4F8QQK5263NSV28HGR58Z86",
-      "last_transition_at": "2026-10-09T02:44:05.317100+00:00",
+      "lane": "for_review",
+      "last_event_id": "01M4F9TRDET6FP8HGZ1BHZ5QSM",
+      "last_transition_at": "2026-10-09T03:03:13.070186+00:00",
       "model": "__resolved_model_absent__",
       "provider": "__resolved_provider_absent__",
       "role": "implementer",
       "shell_pid": 90941,
-      "shell_pid_created_at": "1791513651.01"
+      "shell_pid_created_at": "1791513651.01",
+      "subtasks": {
+        "T014": "done",
+        "T015": "done",
+        "T016": "done",
+        "T017": "done",
+        "T018": "done"
+      }
     },
     "WP05": {
       "actor": "finalize-tasks",
@@ -120,6 +127,9 @@
       "last_event_id": "01M4F9A960ND7606VC43B4F89P",
       "last_transition_at": "2026-10-09T02:54:13.184149+00:00",
       "model": "__resolved_model_absent__",
+      "notes": [
+        "Ready for review"
+      ],
       "provider": "__resolved_provider_absent__",
       "role": "implementer",
       "shell_pid": 83916,
