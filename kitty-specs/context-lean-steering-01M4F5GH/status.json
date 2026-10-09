@@ -1,19 +1,19 @@
 {
-  "event_count": 26,
-  "last_event_id": "01M4FA8WBNRXT6TSFYF2Y3VJ99",
-  "materialized_at": "2026-10-09T03:10:55.861338+00:00",
+  "event_count": 27,
+  "last_event_id": "01M4FA9HGB5HACVRSQKSS2QS6M",
+  "materialized_at": "2026-10-09T03:11:17.515947+00:00",
   "mission_number": "",
   "mission_slug": "context-lean-steering-01M4F5GH",
   "mission_type": "software-dev",
   "summary": {
-    "approved": 2,
+    "approved": 3,
     "blocked": 0,
     "canceled": 0,
     "claimed": 0,
     "done": 0,
     "for_review": 0,
     "in_progress": 0,
-    "in_review": 2,
+    "in_review": 1,
     "planned": 4
   },
   "work_packages": {
@@ -58,7 +58,8 @@
       "last_transition_at": "2026-10-09T03:10:55.861338+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "Ready for review"
+        "Ready for review",
+        "Review passed: index.py builds a deterministic sorted selector->canonical-source index (project/org/built-in tiers, first-wins); FTS5 and JSON-scan backends share the resolve/search surface with a forced-fallback test; unknown selector raises explicit STEER_SELECTOR_UNKNOWN (exit 1, never empty); fetch returns the canonical engine body (byte-compared to build_charter_context_include) with raw-source fallback; stdlib-only (no pyproject/uv.lock change); steer.py not touched; 30 tests pass, ruff check+format clean."
       ],
       "provider": "__resolved_provider_absent__",
       "review_result": {
@@ -86,17 +87,22 @@
     "WP04": {
       "actor": "opencode",
       "agent": "opencode",
-      "agent_profile": "reviewer-renata",
-      "agent_profile_version": "1.0",
+      "agent_profile": "__resolved_profile_absent__",
+      "agent_profile_version": "__resolved_profile_version_absent__",
       "force_count": 0,
-      "lane": "in_review",
-      "last_event_id": "01M4FA4XGBWK3BHKZCV1JV0J0N",
-      "last_transition_at": "2026-10-09T03:08:45.963206+00:00",
+      "lane": "approved",
+      "last_event_id": "01M4FA9HGB5HACVRSQKSS2QS6M",
+      "last_transition_at": "2026-10-09T03:11:17.515947+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
         "Ready for review"
       ],
       "provider": "__resolved_provider_absent__",
+      "review_result": {
+        "reference": "auto-approval:WP04:20261009",
+        "reviewer": "OpenCode Agent",
+        "verdict": "approved"
+      },
       "role": "reviewer",
       "shell_pid": 150174,
       "shell_pid_created_at": "1791515309.44",
