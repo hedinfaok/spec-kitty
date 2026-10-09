@@ -1,0 +1,69 @@
+{
+  "schema": "spec-kitty-research.rules.v1",
+  "rules": [
+    {
+      "id": "R1",
+      "title": "Never commit directly to main",
+      "category": "invariant",
+      "rule": "Never push to `main`; create a topic branch from the current `main` and open a pull request targeting `main`.",
+      "rationale": "Direct pushes bypass the review gate and can publish unreviewed or broken work.",
+      "enforcement": "advisory"
+    },
+    {
+      "id": "R2",
+      "title": "Say Mission, never feature",
+      "category": "invariant",
+      "rule": "The canonical product term is Mission (plural: Missions). The words `feature` and `features` are prohibited in canonical, operator, and user-facing language when they refer to the domain object.",
+      "rationale": "Terminology drift makes the domain model ambiguous.",
+      "enforcement": "advisory"
+    },
+    {
+      "id": "R3",
+      "title": "No blanket noqa",
+      "category": "invariant",
+      "rule": "A lint suppression must name the specific rule code it suppresses and carry a short rationale; a bare `# noqa` that suppresses everything is not allowed.",
+      "rationale": "A blanket suppression hides new findings as well as the one intended.",
+      "enforcement": "advisory"
+    },
+    {
+      "id": "R4",
+      "title": "One trailing newline, no trailing whitespace",
+      "category": "invariant",
+      "rule": "Every source file ends with exactly one trailing newline and contains no line with trailing whitespace.",
+      "rationale": "Avoids noisy diffs and toolchain churn.",
+      "enforcement": "advisory"
+    },
+    {
+      "id": "R5",
+      "title": "Conventional Commits",
+      "category": "invariant",
+      "rule": "Commit subjects follow `type(scope): subject`, where `type` is one of the repository's allowed types (for example `feat`, `fix`, `docs`, `chore`).",
+      "rationale": "A machine-readable history lets tooling group and validate changes.",
+      "enforcement": "advisory"
+    },
+    {
+      "id": "R6",
+      "title": "Format and lint before push",
+      "category": "invariant",
+      "rule": "Run `ruff format --check .` and `ruff check .` before pushing; both must pass.",
+      "rationale": "Formatting is a separate gate from linting.",
+      "enforcement": "advisory"
+    },
+    {
+      "id": "R7",
+      "title": "Prefer a durable fix over a shim",
+      "category": "judgment",
+      "rule": "When a structural cause produces a defect, fix the structure rather than hiding the symptom behind a shim. If a shim is genuinely unavoidable, say why in the change.",
+      "rationale": "Shims accumulate and rot.",
+      "enforcement": "judgment"
+    },
+    {
+      "id": "R8",
+      "title": "Read the charter before planning",
+      "category": "process",
+      "rule": "Read `.kittify/charter/charter.md` before planning or changing code; it is the binding governance document and carries rules not repeated elsewhere.",
+      "rationale": "The charter carries rules not repeated elsewhere.",
+      "enforcement": "process"
+    }
+  ]
+}

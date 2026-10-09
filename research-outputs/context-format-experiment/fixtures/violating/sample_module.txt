@@ -1,0 +1,4 @@
+"""Sample module: planted policy violations."""
+
+def describe(count):   
+    return f"{count} feature(s)"  # noqa

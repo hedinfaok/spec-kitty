@@ -17,7 +17,8 @@
 3. **The per-action payload was already measured at 81–95 KB for `specify`/`plan`/`tasks`/`implement`/`review`** by mission `analyze-prompt-context-load` (issue #5005), and the fix was deferred to the maintainer. 71–75% of it lives in an "Action Doctrine" block that the existing 40k-char budget enforcer structurally cannot see.
 4. **The alternative is not "a smaller constitution".** It is a change of mechanism: a **tiny invariant kernel + a bounded per-turn capsule + just-in-time retrieval + machine gates**. Every invariant a tool can *check* should be deleted from the prompt, because a gate costs **0 tokens/turn** and is **100% reliable**, while prose costs every turn and is advisory.
 5. **Local-capability is a second, independent lever.** The Ryzen box can host the retrieval index, a router/compressor, a drafting model, or the whole loop — which either removes API tokens entirely or cuts them to "hard judgment only".
-6. **Seven levers exist; they compose.** They differ mainly in blast radius, reversibility, and how much they depend on the harness vs. the CLI. Sections 4–5 grade them; Section 8 lists the open questions a plan would have to answer.
+6. **Seven levers exist; they compose.** They differ mainly in blast radius, reversibility, and how much they depend on the harness vs. the CLI. Sections 5–6 grade them; Section 9 lists the open questions a plan would have to answer.
+7. **Format is second-order; the mechanism is first-order.** Models read JSON/config perfectly well, but format only primes a *mode* — the win is *what is in the prompt at all*. Measured on this repo's own rules: Markdown 593 est. tokens, JSON 759, gate + kernel 125 — with enforcement going from 0/8 to 6/8 (§4).
 
 ---
 
@@ -71,7 +72,7 @@ The fix for (2) was **deferred to the maintainer** by operator decision and is t
 
 Combining the two channels: a fresh lane worktree beginning `implement` starts around **~101 KB standing + ~95 KB governance ≈ 196 KB (~49k tokens) of steering context before the task content** — and the standing half is re-paid on every subsequent turn.
 
-> **Measurement caveat (documented by the #5005 mission, and reproduced here).** The `charter context` CLI is *destructive to the state it measures*: the first run pays bootstrap and then marks the action loaded, so a second run is compact. My own ad-hoc CLI readings varied between ~238 KB, ~7 KB, and ~2 KB depending on prior state and flags. **Do not cite ad-hoc CLI byte counts**; cite the §9.2 render-path numbers or clear/restore `context-state.json` deliberately. This is itself evidence for the point in §4-L4: state that affects the prompt should be explicit and inspectable, not an invisible side effect.
+> **Measurement caveat (documented by the #5005 mission, and reproduced here).** The `charter context` CLI is *destructive to the state it measures*: the first run pays bootstrap and then marks the action loaded, so a second run is compact. My own ad-hoc CLI readings varied between ~238 KB, ~7 KB, and ~2 KB depending on prior state and flags. **Do not cite ad-hoc CLI byte counts**; cite the §9.2 render-path numbers or clear/restore `context-state.json` deliberately. This is itself evidence for the point in §5-L4: state that affects the prompt should be explicit and inspectable, not an invisible side effect.
 
 ### 1.4 Prior art *inside this repo*
 
@@ -113,7 +114,81 @@ The alternative thesis, in one line:
 
 ---
 
-## 4. The design space — seven levers
+## 4. Format is not the lever: Markdown vs JSON vs gates
+
+A natural question: if the standing corpus is the problem, do we even need to render it
+as Markdown — are models smart enough to be steered by JSON or config? The answer is that
+**comprehension was never the constraint**, and format is the wrong axis.
+
+### 4.1 Models can be steered by any format — but format is not inert
+
+Same content under a different wrapper produces measurably different behaviour. In *Does
+Prompt Formatting Have Any Impact on LLM Performance?* ([arXiv 2411.10541](https://arxiv.org/html/2411.10541v1)),
+identical content across plain-text/Markdown/YAML/JSON swings accuracy widely and
+**model-dependently** — e.g. GPT-4-1106 HumanEval scores Markdown 86.6 vs JSON 21.95,
+while GPT-3.5 can go the other way. The format primes a *mode*: JSON context reads as
+schema-extraction/completion, Markdown reads as hierarchical synthesis (and is the register
+models were trained on most heavily), terse imperatives read as direct instruction. A
+behavioural rule buried in a JSON string is more likely to be treated as *data to complete*
+than an *instruction to obey*.
+
+Structured output is a separate reliability story: **schema validity is easy, semantic
+correctness is not** ([arXiv 2607.18261](https://arxiv.org/html/2607.18261v1) — a 120B model
+hits 100% schema validity but ~81–83% semantic success; a 30B model is 100% schema-valid and
+~31% semantically correct). Constraining the *shape* does not constrain the *judgment*.
+
+### 4.2 JSON is usually *bigger* for prose-shaped content
+
+For natural-language rules, JSON adds tokens (keys, braces, quotes) rather than removing
+them. Measured on this repo's own eight-rule sample: Markdown 2,372 bytes vs JSON 3,035
+bytes — **JSON is ~28% larger**. Migrating an instruction corpus Markdown→JSON would cost
+more per turn and, per §4.1, reduce salience.
+
+### 4.3 The real axis: three kinds of content, three homes
+
+| Kind of content | Home | Does the model read it? | Example |
+|---|---|---|---|
+| Checkable invariant | a **gate** (hook / linter / CI / config) | **no** | "never push to `main`" |
+| Fact / state / enum | **structured query** on demand | only the slice asked for | the lane state machine |
+| Behavioural judgment | a small **prose kernel** | yes | "prefer a durable fix over a shim" |
+| Deep reference | **retrieved canonical text** | on demand | merge-integrity edge cases |
+
+So the move is not Markdown→JSON. It is **delete most of the prompt** by moving checkable
+rules into gates and state into queries, leaving a tiny prose kernel for what is genuinely
+behavioural. Markdown's role shrinks to the kernel and to retrievable reference.
+
+### 4.4 The measured result
+
+[`context-format-experiment/`](context-format-experiment/) encodes the same eight rules
+three ways and measures what enters the model's context:
+
+| Encoding | ~tokens in context | Rules enforced |
+|---|---:|---|
+| A. Markdown prose | 593 | 0/8 (advisory) |
+| B. JSON config | 759 | 0/8 (advisory) |
+| C. Gate + kernel | 125 | 6/8 by construction |
+
+Encoding C is ~4.75× smaller than Markdown and ~6× smaller than JSON — because six of eight
+rules left the prompt and became a program (`check_policy.py`) the model never reads and
+cannot misread. A gate costs **0 tokens/turn**; the kernel pays only for the judgment
+residue. The experiment also demonstrates the gate catching planted violations (forbidden
+term, blanket `# noqa`, trailing whitespace, protected branch, bad commit subject) that the
+prose and JSON encodings would only advise against.
+
+### 4.5 Nuance for the local tier
+
+Small models (the local offload on the Ryzen) are the *most* format-sensitive and the
+*least* semantically reliable under constraint. Use grammar-constrained structured output
+for mechanical steps (routing, classification, extraction) — it removes format errors by
+construction — but keep verification/gates for judgment. The API model carries the prose
+kernel's judgment calls.
+
+**Net:** terse prose for the behavioural kernel, structured queries for state, gates for
+invariants — do not migrate prose policy to JSON.
+
+---
+
+## 5. The design space — seven levers
 
 These are **grades**, not a menu; they compose. Each is scored on impact, effort, reversibility, and whether it lives in the CLI or the harness.
 
@@ -161,7 +236,7 @@ Make every layer above able to run locally, in tiers:
 
 ---
 
-## 5. Comparison
+## 6. Comparison
 
 | Lever | Token impact | Reliability | Effort | Reversibility | Lives in |
 |---|---|---|---|---|---|
@@ -177,7 +252,7 @@ Make every layer above able to run locally, in tiers:
 
 ---
 
-## 6. Hardware: what the Ryzen AI Max+ 395 can carry
+## 7. Hardware: what the Ryzen AI Max+ 395 can carry
 
 | Property | Value | Implication |
 |---|---|---|
@@ -191,12 +266,13 @@ Make every layer above able to run locally, in tiers:
 
 ---
 
-## 7. Prior art (external)
+## 8. Prior art (external)
 
 - **Anthropic — Effective context engineering for AI agents**: smallest high-signal token set; context rot; compaction, note-taking, sub-agents. <https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents>
 - **Agent Skills / progressive disclosure** (Anthropic, Microsoft, LangChain): metadata always, instructions on activation, resources on execution — the canonical "advertise → load → read resources" pattern. <https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview> · <https://learn.microsoft.com/en-us/agent-framework/agents/skills>
 - **Aider repo-map**: tree-sitter symbol graph + PageRank, fitted to a ~1k-token budget — token-lean structural context. <https://aider.chat/docs/repomap.html>
 - **Structural codebase index / stable-prefix caching**: notes that rebuilding the full prompt each turn forfeits prompt caching. <https://arxiv.org/html/2606.22417v1>
+- **Prompt-format sensitivity**: *Does Prompt Formatting Have Any Impact on LLM Performance?* (arXiv 2411.10541) and schema-validity-vs-semantic-reliability (arXiv 2607.18261) — the evidence behind §4.
 - **Sourcegraph / Sentra context-engineering surveys** (2026): the "seven techniques" framing; context as a scarce, rivalrous resource.
 - **Strix Halo local-LLM figures**: ModelFit and Compute Market hardware reviews, 2026. <https://modelfit.io/gpu/ryzen-ai-max-395>
 
@@ -204,7 +280,7 @@ Make every layer above able to run locally, in tiers:
 
 ---
 
-## 8. Decision points before any plan
+## 9. Decision points before any plan
 
 These are the questions a plan would have to answer. They are listed, not resolved.
 
@@ -219,7 +295,7 @@ These are the questions a plan would have to answer. They are listed, not resolv
 
 ---
 
-## 9. Non-goals
+## 10. Non-goals
 
 - This document proposes **no plan and no schedule**. It is a map.
 - It does **not** propose deleting doctrine content — only changing *when* it is paid for.
@@ -228,7 +304,7 @@ These are the questions a plan would have to answer. They are listed, not resolv
 
 ---
 
-## 10. Honest residuals and uncertainties
+## 11. Honest residuals and uncertainties
 
 - **Standing-context token estimates are estimates.** File byte sizes are measured; the skill-catalog and tool-catalog sizes are order-of-magnitude only, since they depend on the harness.
 - **The CLI's own byte counts are unreliable** (stateful, flag-dependent — §1.3). Only the `build_with_scope` render-path numbers (§1.2) are vetted.

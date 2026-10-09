@@ -1,0 +1,5 @@
+"""Sample module: policy-clean."""
+
+
+def describe(count: int) -> str:
+    return f"{count} mission(s)"
