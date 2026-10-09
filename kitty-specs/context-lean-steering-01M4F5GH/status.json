@@ -1,7 +1,7 @@
 {
-  "event_count": 38,
-  "last_event_id": "01M4FBHHN5YHBR5HH5PG6KX3YC",
-  "materialized_at": "2026-10-09T03:33:08.389064+00:00",
+  "event_count": 40,
+  "last_event_id": "01M4FBJMV2BST1FB56R6Q3TAFJ",
+  "materialized_at": "2026-10-09T03:33:44.388711+00:00",
   "mission_number": "",
   "mission_slug": "context-lean-steering-01M4F5GH",
   "mission_type": "software-dev",
@@ -12,9 +12,9 @@
     "claimed": 0,
     "done": 0,
     "for_review": 0,
-    "in_progress": 0,
+    "in_progress": 1,
     "in_review": 0,
-    "planned": 3
+    "planned": 2
   },
   "work_packages": {
     "WP01": {
@@ -140,11 +140,14 @@
       }
     },
     "WP05": {
-      "actor": "finalize-tasks",
+      "actor": "opencode",
+      "agent": "opencode",
       "force_count": 0,
-      "lane": "planned",
-      "last_event_id": "01M4F6PD1S6D89K3SV9HJHQMCV",
-      "last_transition_at": "2026-10-09T02:08:24.633146+00:00"
+      "lane": "in_progress",
+      "last_event_id": "01M4FBJMV2BST1FB56R6Q3TAFJ",
+      "last_transition_at": "2026-10-09T03:33:44.388711+00:00",
+      "shell_pid": 189302,
+      "shell_pid_created_at": "1791516816.12"
     },
     "WP06": {
       "actor": "finalize-tasks",
