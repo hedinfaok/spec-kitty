@@ -1,0 +1,78 @@
+{
+  "entries": [
+    {
+      "created_at": "2026-10-09T01:52:29.090015Z",
+      "decision_id": "01M4F5S7X15RATYMKWZCAV8CWN",
+      "final_answer": "Carry it as the single documented divergence (friendly fork)",
+      "input_key": "adr_requires_inline",
+      "mission_id": "01M4F5GH28P9Y9DMSPKXW9RJJZ",
+      "mission_slug": "context-lean-steering-01M4F5GH",
+      "opened_by": "cli",
+      "options": [
+        "Amend the ADR upstream in this mission",
+        "Carry it as the single documented divergence (friendly fork)",
+        "Defer the decision to plan"
+      ],
+      "origin_flow": "specify",
+      "other_answer": false,
+      "question": "How should the requires-inline tension with ADR 2026-07-28-1 be resolved?",
+      "rationale": null,
+      "resolved_at": "2026-10-09T01:55:26.879653Z",
+      "resolved_by": null,
+      "slot_key": "specify.governance.adr_requires_inline",
+      "status": "resolved",
+      "step_id": null,
+      "summary_json": null
+    },
+    {
+      "created_at": "2026-10-09T01:52:31.947854Z",
+      "decision_id": "01M4F5SAPB3AX24GCVCG1YW4BZ",
+      "final_answer": "Deterministic (FTS/keyword, no model)",
+      "input_key": "retrieval_mechanism",
+      "mission_id": "01M4F5GH28P9Y9DMSPKXW9RJJZ",
+      "mission_slug": "context-lean-steering-01M4F5GH",
+      "opened_by": "cli",
+      "options": [
+        "Deterministic (FTS/keyword, no model)",
+        "Embedding (needs a local model)",
+        "Hybrid"
+      ],
+      "origin_flow": "specify",
+      "other_answer": false,
+      "question": "Which retrieval mechanism should the lean layer use for doctrine?",
+      "rationale": null,
+      "resolved_at": "2026-10-09T01:55:29.746276Z",
+      "resolved_by": null,
+      "slot_key": "specify.retrieval.mechanism",
+      "status": "resolved",
+      "step_id": null,
+      "summary_json": null
+    },
+    {
+      "created_at": "2026-10-09T01:52:34.815102Z",
+      "decision_id": "01M4F5SDFZYQA6VK8ACFFYDDJ5",
+      "final_answer": "Full local tiers (T0-T3)",
+      "input_key": "local_tier_scope",
+      "mission_id": "01M4F5GH28P9Y9DMSPKXW9RJJZ",
+      "mission_slug": "context-lean-steering-01M4F5GH",
+      "opened_by": "cli",
+      "options": [
+        "Retrieval tier only (always local)",
+        "Retrieval + local draft offload",
+        "Full local tiers (T0-T3)"
+      ],
+      "origin_flow": "specify",
+      "other_answer": false,
+      "question": "How much of the local-model runtime should this mission build?",
+      "rationale": null,
+      "resolved_at": "2026-10-09T01:55:32.585210Z",
+      "resolved_by": null,
+      "slot_key": "specify.local.tier_scope",
+      "status": "resolved",
+      "step_id": null,
+      "summary_json": null
+    }
+  ],
+  "mission_id": "01M4F5GH28P9Y9DMSPKXW9RJJZ",
+  "version": 1
+}
