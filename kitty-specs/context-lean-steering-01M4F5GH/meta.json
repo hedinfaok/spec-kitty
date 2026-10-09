@@ -11,5 +11,7 @@
   "purpose_tldr": "Cut per-turn steering context ~100x while keeping the engine and its gates",
   "slug": "context-lean-steering-01M4F5GH",
   "target_branch": "feat/context-lean-steering",
-  "topology": "lanes"
+  "topology": "lanes",
+  "vcs": "git",
+  "vcs_locked_at": "2026-10-09T02:11:28.391360+00:00"
 }
