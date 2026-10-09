@@ -11,6 +11,9 @@ requirement_refs:
 planning_base_branch: feat/context-lean-steering
 merge_target_branch: feat/context-lean-steering
 branch_strategy: Planning artifacts for this mission were generated on feat/context-lean-steering. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into feat/context-lean-steering unless the human explicitly redirects the landing branch.
+base_branch: kitty/mission-context-lean-steering-01M4F5GH
+base_commit: a3fb9bc17cb347f5709dc2a69819c2033f347d23
+created_at: '2026-10-09T03:54:17.736124+00:00'
 subtasks:
 - T023
 - T024
