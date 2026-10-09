@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import json
 import subprocess
-import sys
 from collections.abc import Callable, Sequence
 
 import pytest
@@ -43,12 +42,6 @@ def _completed(
 def _install_run(monkeypatch: pytest.MonkeyPatch, handler: Callable[..., object]) -> None:
     """Replace the single subprocess seam all wrapped checks flow through."""
     monkeypatch.setattr(gates_module, "_run", handler)
-
-
-def _seed_file(root, rel: str) -> None:
-    path = root / rel
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("", encoding="utf-8")
 
 
 def _seed_ruff(root) -> None:
@@ -151,48 +144,8 @@ def test_ruff_gate_fails_loudly_when_ruff_is_unavailable(monkeypatch: pytest.Mon
     assert all("unavailable" in problem for problem in problems)
 
 
-def test_terminology_gate_refuses_on_a_planted_term(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
-    _seed_file(tmp_path, gates_module._TERMINOLOGY_FILE)
-
-    def fake_run(argv: Sequence[str], *, cwd) -> subprocess.CompletedProcess[str]:
-        return _completed(argv, returncode=1, stdout="forbidden term hit at src/x.py")
-
-    _install_run(monkeypatch, fake_run)
-    problems = gates_module._terminology_gate(GateTarget(root=tmp_path))
-    assert any("check refused" in problem for problem in problems)
-
-
-def test_terminology_gate_is_clean_when_the_check_passes(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
-    _seed_file(tmp_path, gates_module._TERMINOLOGY_FILE)
-    _install_run(monkeypatch, lambda argv, *, cwd: _completed(argv))
-    assert gates_module._terminology_gate(GateTarget(root=tmp_path)) == []
-
-
-def test_terminology_gate_is_skipped_without_the_check(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
-    _install_run(monkeypatch, lambda argv, *, cwd: _completed(argv))
-    assert gates_module._terminology_gate(GateTarget(root=tmp_path)) == [], "a repo without the node is not checked"
-
-
-def test_architectural_gate_refuses_on_a_layer_violation(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
-    _seed_file(tmp_path, gates_module._ARCHITECTURAL_CHECK)
-
-    def fake_run(argv: Sequence[str], *, cwd) -> subprocess.CompletedProcess[str]:
-        return _completed(argv, returncode=1, stdout="kernel imports specify_cli")
-
-    _install_run(monkeypatch, fake_run)
-    problems = gates_module._architectural_gate(GateTarget(root=tmp_path))
-    assert any("check refused" in problem for problem in problems)
-
-
-def test_architectural_gate_is_clean_when_the_check_passes(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
-    _seed_file(tmp_path, gates_module._ARCHITECTURAL_CHECK)
-    _install_run(monkeypatch, lambda argv, *, cwd: _completed(argv))
-    assert gates_module._architectural_gate(GateTarget(root=tmp_path)) == []
-
-
-def test_wrapped_checks_use_the_existing_entry_points(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
-    _seed_file(tmp_path, gates_module._TERMINOLOGY_FILE)
-    _seed_file(tmp_path, gates_module._ARCHITECTURAL_CHECK)
+def test_repo_gate_discovers_make_check(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    (tmp_path / "Makefile").write_text("check:\n\tpytest -q\n", encoding="utf-8")
     seen: list[list[str]] = []
 
     def fake_run(argv: Sequence[str], *, cwd) -> subprocess.CompletedProcess[str]:
@@ -200,12 +153,52 @@ def test_wrapped_checks_use_the_existing_entry_points(monkeypatch: pytest.Monkey
         return _completed(argv)
 
     _install_run(monkeypatch, fake_run)
-    gates_module._terminology_gate(GateTarget(root=tmp_path))
-    gates_module._architectural_gate(GateTarget(root=tmp_path))
-    argv_text = "\n".join(" ".join(argv) for argv in seen)
-    assert "tests/architectural/test_no_legacy_terminology.py" in argv_text
-    assert "tests/architectural/test_layer_rules.py" in argv_text
-    assert f"{sys.executable} -m pytest" in argv_text
+    assert gates_module._repo_gate(GateTarget(root=tmp_path)) == []
+    assert seen == [["make", "check"]]
+
+
+def test_repo_gate_discovers_npm_check(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    (tmp_path / "package.json").write_text('{"scripts": {"check": "eslint ."}}', encoding="utf-8")
+    seen: list[list[str]] = []
+
+    def fake_run(argv: Sequence[str], *, cwd) -> subprocess.CompletedProcess[str]:
+        seen.append(list(argv))
+        return _completed(argv)
+
+    _install_run(monkeypatch, fake_run)
+    assert gates_module._repo_gate(GateTarget(root=tmp_path)) == []
+    assert seen == [["npm", "run", "check"]]
+
+
+def test_repo_gate_runs_every_declared_command(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    path = tmp_path / ".kittify" / "config.yaml"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        'steer:\n  gate_command:\n    - ["ruff", "check", "."]\n    - ["pytest", "-q"]\n',
+        encoding="utf-8",
+    )
+    seen: list[list[str]] = []
+
+    def fake_run(argv: Sequence[str], *, cwd) -> subprocess.CompletedProcess[str]:
+        seen.append(list(argv))
+        return _completed(argv)
+
+    _install_run(monkeypatch, fake_run)
+    assert gates_module._repo_gate(GateTarget(root=tmp_path)) == []
+    assert seen == [["ruff", "check", "."], ["pytest", "-q"]]
+
+
+def test_repo_gate_is_skipped_when_nothing_is_declared_or_discovered(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    _install_run(monkeypatch, lambda argv, *, cwd: _completed(argv))
+    assert gates_module._repo_gate(GateTarget(root=tmp_path)) == []
+
+
+def test_no_gate_hard_codes_a_spec_kitty_path() -> None:
+    """Portability guard: the registry must not assume the host repo is spec-kitty."""
+    import inspect
+
+    source = inspect.getsource(gates_module)
+    assert "tests/architectural/" not in source, "gates must not name spec-kitty's own test files"
 
 
 # ---------------------------------------------------------------------------
@@ -326,8 +319,6 @@ PLANTED_VIOLATIONS: dict[str, Callable[..., None]] = {
     "engine-guard": test_engine_guard_gate_refuses_on_guard_failures,
     "repo-gate": test_repo_gate_refuses_on_a_failing_command,
     "ruff": test_ruff_gate_refuses_on_a_lint_violation,
-    "terminology": test_terminology_gate_refuses_on_a_planted_term,
-    "architectural": test_architectural_gate_refuses_on_a_layer_violation,
 }
 
 

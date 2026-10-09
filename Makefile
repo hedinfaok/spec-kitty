@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help dev-setup lint format-check format-check-files docs-lint typecheck test-fast test-full convergence-census ci-parity test-quality-scan
+.PHONY: help dev-setup lint format-check format-check-files check docs-lint typecheck test-fast test-full convergence-census ci-parity test-quality-scan
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -25,6 +25,11 @@ format-check: ## Run ruff formatter check on the whole repo (issue #473's gate)
 # --force-exclude is given. Usage: make format-check-files FILES="a.py b.py"
 format-check-files: ## Run ruff formatter check on explicit paths, honoring the format-exclude ratchet
 	uv run --frozen ruff format --check --force-exclude $(FILES)
+
+# The fast gate set `spec-kitty steer check` discovers (`make check`). Keep it
+# fast and deterministic: it runs mid-loop. The full suite is `make test-full`.
+check: lint format-check ## Fast gate set discovered by `spec-kitty steer check`
+	uv run --frozen python -m pytest tests/architectural/test_no_legacy_terminology.py -q -p no:cacheprovider
 
 docs-lint: ## Spell-check docs (typos + scoped US spelling) and check the changelog [Unreleased] style
 	uv run --frozen python -m scripts.docs.check_spelling

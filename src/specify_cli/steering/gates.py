@@ -5,14 +5,10 @@ treats as binding: a refusal stops the loop, the agent fixes the cause and
 re-runs. This is the runtime mirror of ``steer kernel``'s third protocol rule
 ("invariants are machine gates").
 
-**Portability (this is the point).** A gate is only *applicable* when the
-repository actually has the thing it checks. A repo that does not use ``ruff``,
-or does not ship the canonical architectural nodes, is **skipped** — not
-refused. A repo that *has* a check but whose tool is missing or misbehaving is
-**refused** (fail loudly, never a silent pass). This lets ``steer`` run in any
-repository, not only the spec-kitty checkout.
-
-The registry:
+**No coupling to the host repository (the design rule).** A gate must never
+assume the repository is spec-kitty, or that it ships spec-kitty's own tests.
+The built-ins are repo-agnostic, and the repo's *own* checks are supplied by the
+repo itself:
 
 * *protected branch* -- refuse on a branch the repo **explicitly** declares
   protected (``protection.protected_branches`` in ``.kittify/config.yaml``).
@@ -20,17 +16,21 @@ The registry:
   protection is ``ProtectionPolicy`` at commit time, not this mirror.
 * *engine guard* -- refuse when ``spec-kitty next --mission <handle> --json``
   reports ``guard_failures`` (skipped when no Mission handle is given).
-* *repo gate* -- run the command the repo declares in
-  ``steer.gate_command`` (``.kittify/config.yaml``), so any repository can plug
-  in its own enforcement.
+* *repo gate* -- the repository's **own** check, resolved in this order:
+  1. ``steer.gate_command`` in ``.kittify/config.yaml`` (declared; a string,
+     an argv list, or a list of argv commands);
+  2. a conventional fast target discovered in the repo -- ``make check`` when
+     the Makefile defines it, else ``npm run check`` when ``package.json``
+     declares it;
+  3. nothing -- the gate is skipped.
 * *ruff* -- ``ruff check`` + ``ruff format --check``, the CI entry points,
   **only when the repo has a ruff config** (``ruff.toml`` / ``.ruff.toml`` /
   ``[tool.ruff]`` in ``pyproject.toml``).
-* *terminology* / *architectural* -- the canonical spec-kitty architectural
-  nodes, **only when the repo ships them** (``tests/architectural/...``).
 
-Every wrapper is thin and fails loudly. A gate with no planted-violation case is
-reported by :func:`unverified_gate_ids` (NFR-005).
+Missing tools still fail loudly (a repo that has a check but not its tool
+refuses); a repo that does not have a check is skipped, never refused. A gate
+with no planted-violation case is reported by :func:`unverified_gate_ids`
+(NFR-005).
 """
 
 from __future__ import annotations
@@ -38,7 +38,6 @@ from __future__ import annotations
 import json
 import shlex
 import subprocess
-import sys
 from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -51,15 +50,12 @@ _RUFF = "ruff"
 #: The engine entry point whose JSON decision carries ``guard_failures``.
 _SPEC_KITTY = "spec-kitty"
 
-#: The canonical terminology check (a fast, narrow architectural node).
-_TERMINOLOGY_CHECK = "tests/architectural/test_no_legacy_terminology.py::test_forbidden_term_does_not_appear"
-_TERMINOLOGY_FILE = "tests/architectural/test_no_legacy_terminology.py"
-
-#: The canonical architectural layer-rule check.
-_ARCHITECTURAL_CHECK = "tests/architectural/test_layer_rules.py"
-
-#: The repository config that declares protected branches and a repo gate.
+#: The repository config that declares protected branches and the repo gate.
 _CONFIG = ".kittify/config.yaml"
+
+#: Conventional fast-check targets the repo gate discovers when none is declared.
+_DISCOVERED_MAKE_TARGET = "check"
+_DISCOVERED_NPM_SCRIPT = "check"
 
 #: How many output lines a single refusal echoes back before summarising.
 _MAX_PROBLEM_LINES = 5
@@ -160,17 +156,43 @@ def _declared_protected_branches(root: Path) -> frozenset[str] | None:
     return frozenset(str(name) for name in branches)
 
 
-def _declared_gate_command(root: Path) -> list[str] | None:
-    """The repo's declared gate command (``steer.gate_command``), or ``None``."""
+def _declared_gate_commands(root: Path) -> list[list[str]] | None:
+    """The repo's declared gate commands (``steer.gate_command``), or ``None``.
+
+    Accepts a string (``shlex``-split, no shell), an argv list of strings, or a
+    list of argv commands.
+    """
     config = _load_config(root)
     steer = config.get("steer")
     if not isinstance(steer, Mapping):
         return None
     command = steer.get("gate_command")
     if isinstance(command, str) and command.strip():
-        return shlex.split(command)
+        return [shlex.split(command)]
     if isinstance(command, Sequence) and not isinstance(command, (str, bytes)) and command:
-        return [str(part) for part in command]
+        parts = list(command)
+        if all(isinstance(part, str) for part in parts):
+            return [[str(part) for part in parts]]
+        if all(isinstance(part, Sequence) and not isinstance(part, (str, bytes)) for part in parts):
+            return [[str(inner) for inner in part] for part in parts]
+    return None
+
+
+def _discovered_gate_commands(root: Path) -> list[list[str]] | None:
+    """Discover a conventional fast check target the repo defines, or ``None``."""
+    makefile = root / "Makefile"
+    if makefile.is_file():
+        for line in makefile.read_text(encoding="utf-8", errors="replace").splitlines():
+            if line.startswith(f"{_DISCOVERED_MAKE_TARGET}:"):
+                return [["make", _DISCOVERED_MAKE_TARGET]]
+    package_json = root / "package.json"
+    if package_json.is_file():
+        try:
+            scripts = json.loads(package_json.read_text(encoding="utf-8")).get("scripts", {})
+        except json.JSONDecodeError:
+            scripts = {}
+        if isinstance(scripts, Mapping) and _DISCOVERED_NPM_SCRIPT in scripts:
+            return [["npm", "run", _DISCOVERED_NPM_SCRIPT]]
     return None
 
 
@@ -247,14 +269,17 @@ def _engine_guard_gate(target: GateTarget) -> list[str]:
 
 
 def _repo_gate(target: GateTarget) -> list[str]:
-    """Run the command the repository declares in ``steer.gate_command``."""
+    """Run the repository's own check: declared (``steer.gate_command``) or discovered."""
     try:
-        command = _declared_gate_command(target.root)
+        commands = _declared_gate_commands(target.root) or _discovered_gate_commands(target.root)
     except GateConfigError as exc:
         return [f"cannot read gate config; cannot verify: {exc}"]
-    if not command:
+    if not commands:
         return []
-    return _command_gate(command, target.root, "repo gate")
+    problems: list[str] = []
+    for command in commands:
+        problems += _command_gate(command, target.root, "repo gate")
+    return problems
 
 
 def _has_ruff_config(root: Path) -> bool:
@@ -274,33 +299,12 @@ def _ruff_gate(target: GateTarget) -> list[str]:
     return problems
 
 
-def _pytest_argv(node: str) -> list[str]:
-    """The existing entry point for an architectural pytest node."""
-    return [sys.executable, "-m", "pytest", node, "-q", "-p", "no:cacheprovider"]
-
-
-def _terminology_gate(target: GateTarget) -> list[str]:
-    """Reuse the canonical terminology node, only when the repo ships it."""
-    if not (target.root / _TERMINOLOGY_FILE).is_file():
-        return []
-    return _command_gate(_pytest_argv(_TERMINOLOGY_CHECK), target.root, "check")
-
-
-def _architectural_gate(target: GateTarget) -> list[str]:
-    """Reuse the canonical architectural node, only when the repo ships it."""
-    if not (target.root / _ARCHITECTURAL_CHECK).is_file():
-        return []
-    return _command_gate(_pytest_argv(_ARCHITECTURAL_CHECK), target.root, "check")
-
-
 #: The registry. Order is the order problems are reported in.
 GATES: tuple[Gate, ...] = (
     Gate("protected-branch", _protected_branch_gate),
     Gate("engine-guard", _engine_guard_gate),
     Gate("repo-gate", _repo_gate),
     Gate("ruff", _ruff_gate),
-    Gate("terminology", _terminology_gate),
-    Gate("architectural", _architectural_gate),
 )
 
 
