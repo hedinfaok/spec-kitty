@@ -1,4 +1,4 @@
 {"event": "started", "invocation_id": "01M4F4X3BGXCMKGGAW6KTGQ1HA", "profile_id": "researcher-robbie", "action": "analyze", "request_text": "Run the direct local-model compliance probe against unsloth/Qwen3.5-9B-GGUF:Q4_K_M to extend the sweep to a typical consumer 9B model, and record the result.", "actor": "operator", "mode_of_work": "task_execution", "governance_context_hash": "bfd986cb75bcedbd", "governance_context_available": true, "started_at": "2026-10-09T01:37:10.037937+00:00", "model_id": "claude-opus-4-6"}
 {"event": "completed", "invocation_id": "01M4F4X3BGXCMKGGAW6KTGQ1HA", "completed_at": "2026-10-09T01:38:02.339133+00:00", "outcome": "done", "closed_by": "agent"}
 {"event": "artifact_link", "invocation_id": "01M4F4X3BGXCMKGGAW6KTGQ1HA", "at": "2026-10-09T01:38:02.339421+00:00", "kind": "artifact", "ref": "research-outputs/lean-steering-spike/compliance-experiment.md"}
-{"event": "commit_link", "invocation_id": "01M4F4X3BGXCMKGGAW6KTGQ1HA", "at": "2026-10-09T01:38:02.339498+00:00", "sha": "HEAD"}
+{"event": "commit_link", "invocation_id": "01M4F4X3BGXCMKGGAW6KTGQ1HA", "at": "2026-10-09T01:38:02.339498+00:00", "sha": "caef80125"}
