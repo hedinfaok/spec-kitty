@@ -497,6 +497,17 @@ def _register_spec_commit(app: typer.Typer) -> None:
     app.command(name="spec-commit")(spec_commit_module.spec_commit_command)
 
 
+def _register_steer(app: typer.Typer) -> None:
+    # WP01 (context-lean-steering-01M4F5GH T001): the `steer` command group is
+    # a new, additive surface (Q1 = A). It is registered here because this
+    # module is the single command-registry authority -- the same
+    # rationale-backed minimal out-of-map registration the `issue-matrix`
+    # registrar above documents. No existing registration changes.
+    from . import steer as steer_module
+
+    app.add_typer(steer_module.app, name="steer", help="Lean steering: standing kernel, per-step capsule and binding gates.")
+
+
 def _register_session_start(app: typer.Typer) -> None:
     from . import session_start as session_start_module
 
@@ -662,6 +673,7 @@ _ALL_COMMAND_REGISTRARS: tuple[_CommandRegistrar, ...] = (
     _register_profile_invocation,
     _register_invocations,
     _register_retrospect,
+    _register_steer,
 )
 
 _COMMAND_REGISTRARS: dict[str, _CommandRegistrar] = {
@@ -727,6 +739,7 @@ _COMMAND_REGISTRARS: dict[str, _CommandRegistrar] = {
     "profile-invocation": _register_profile_invocation,
     "invocations": _register_invocations,
     "retrospect": _register_retrospect,
+    "steer": _register_steer,
 }
 
 
