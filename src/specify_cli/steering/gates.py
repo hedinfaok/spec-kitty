@@ -10,6 +10,13 @@ assume the repository is spec-kitty, or that it ships spec-kitty's own tests.
 The built-ins are repo-agnostic, and the repo's *own* checks are supplied by the
 repo itself:
 
+**Declaration implies obligation.** A gate the repository *declares* -- a
+``steer.gate_command`` value, a discovered ``make check``/``npm run check``
+target, a ruff config, a ``protection.protected_branches`` list -- **must be
+verified**. If it cannot be run (missing tool, malformed declaration, non-zero
+exit), that is a **refusal**, never a skip. Only a gate the repository does
+**not** declare at all is skipped. "We could not check" is never "it passed".
+
 * *protected branch* -- refuse on a branch the repo **explicitly** declares
   protected (``protection.protected_branches`` in ``.kittify/config.yaml``).
   Opt-in: when the key is absent the gate is skipped, because the authoritative
@@ -18,19 +25,19 @@ repo itself:
   reports ``guard_failures`` (skipped when no Mission handle is given).
 * *repo gate* -- the repository's **own** check, resolved in this order:
   1. ``steer.gate_command`` in ``.kittify/config.yaml`` (declared; a string,
-     an argv list, or a list of argv commands);
+     an argv list, or a list of argv commands). A declared value that is empty
+     or malformed is a refusal, not a skip.
   2. a conventional fast target discovered in the repo -- ``make check`` when
      the Makefile defines it, else ``npm run check`` when ``package.json``
-     declares it;
+     declares it. A discovered target whose tool is missing is a refusal.
   3. nothing -- the gate is skipped.
 * *ruff* -- ``ruff check`` + ``ruff format --check``, the CI entry points,
   **only when the repo has a ruff config** (``ruff.toml`` / ``.ruff.toml`` /
-  ``[tool.ruff]`` in ``pyproject.toml``).
+  ``[tool.ruff]`` in ``pyproject.toml``). A ruff config with no ruff tool is a
+  refusal.
 
-Missing tools still fail loudly (a repo that has a check but not its tool
-refuses); a repo that does not have a check is skipped, never refused. A gate
-with no planted-violation case is reported by :func:`unverified_gate_ids`
-(NFR-005).
+A gate with no planted-violation case is reported by
+:func:`unverified_gate_ids` (NFR-005).
 """
 
 from __future__ import annotations
@@ -157,25 +164,35 @@ def _declared_protected_branches(root: Path) -> frozenset[str] | None:
 
 
 def _declared_gate_commands(root: Path) -> list[list[str]] | None:
-    """The repo's declared gate commands (``steer.gate_command``), or ``None``.
+    """The repo's declared gate commands (``steer.gate_command``), or ``None`` when undeclared.
 
     Accepts a string (``shlex``-split, no shell), an argv list of strings, or a
-    list of argv commands.
+    list of argv commands. A *declared* value that is empty or malformed raises
+    :class:`GateConfigError` -- a refusal, never a skip (declaration implies
+    obligation).
     """
     config = _load_config(root)
     steer = config.get("steer")
-    if not isinstance(steer, Mapping):
+    if not isinstance(steer, Mapping) or "gate_command" not in steer:
         return None
-    command = steer.get("gate_command")
-    if isinstance(command, str) and command.strip():
-        return [shlex.split(command)]
-    if isinstance(command, Sequence) and not isinstance(command, (str, bytes)) and command:
+    command = steer["gate_command"]
+    if isinstance(command, str):
+        parts = shlex.split(command)
+        if not parts:
+            raise GateConfigError("steer.gate_command is declared but empty")
+        return [parts]
+    if isinstance(command, Sequence) and not isinstance(command, (str, bytes)):
         parts = list(command)
+        if not parts:
+            raise GateConfigError("steer.gate_command is declared but empty")
         if all(isinstance(part, str) for part in parts):
             return [[str(part) for part in parts]]
         if all(isinstance(part, Sequence) and not isinstance(part, (str, bytes)) for part in parts):
-            return [[str(inner) for inner in part] for part in parts]
-    return None
+            commands = [[str(inner) for inner in part] for part in parts]
+            if any(not cmd for cmd in commands):
+                raise GateConfigError("steer.gate_command contains an empty command")
+            return commands
+    raise GateConfigError(f"steer.gate_command has an unsupported shape: {command!r}")
 
 
 def _discovered_gate_commands(root: Path) -> list[list[str]] | None:

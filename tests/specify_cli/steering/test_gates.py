@@ -193,6 +193,33 @@ def test_repo_gate_is_skipped_when_nothing_is_declared_or_discovered(monkeypatch
     assert gates_module._repo_gate(GateTarget(root=tmp_path)) == []
 
 
+def test_repo_gate_refuses_when_a_declared_command_is_empty(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    path = tmp_path / ".kittify" / "config.yaml"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text('steer:\n  gate_command: ""\n', encoding="utf-8")
+    _install_run(monkeypatch, lambda argv, *, cwd: _completed(argv))
+    assert gates_module._repo_gate(GateTarget(root=tmp_path)), "a declared but empty gate must refuse, never skip"
+
+
+def test_repo_gate_refuses_when_a_declared_command_is_malformed(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    path = tmp_path / ".kittify" / "config.yaml"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("steer:\n  gate_command: 42\n", encoding="utf-8")
+    _install_run(monkeypatch, lambda argv, *, cwd: _completed(argv))
+    assert gates_module._repo_gate(GateTarget(root=tmp_path)), "a declared but malformed gate must refuse, never skip"
+
+
+def test_repo_gate_refuses_when_a_declared_tool_is_missing(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    _seed_repo_gate(tmp_path, "make check")
+
+    def fake_run(argv: Sequence[str], *, cwd):
+        raise ToolUnavailableError("command 'make' not found")
+
+    _install_run(monkeypatch, fake_run)
+    problems = gates_module._repo_gate(GateTarget(root=tmp_path))
+    assert any("unavailable" in problem for problem in problems), "a declared gate whose tool is missing must refuse"
+
+
 def test_no_gate_hard_codes_a_spec_kitty_path() -> None:
     """Portability guard: the registry must not assume the host repo is spec-kitty."""
     import inspect
