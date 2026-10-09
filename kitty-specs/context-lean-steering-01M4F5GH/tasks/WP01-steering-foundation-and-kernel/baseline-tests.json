@@ -1,0 +1,13 @@
+{
+  "wp_id": "WP01",
+  "captured_at": "2026-10-09T02:14:25Z",
+  "base_branch": "feat/context-lean-steering",
+  "base_commit": "015c5db81ac611db61e824e233a668fa313dba16",
+  "test_runner": "custom",
+  "total": 0,
+  "passed": 0,
+  "failed": 0,
+  "skipped": 0,
+  "failures": [],
+  "source_identity": "DeclaredCommandScopeSource/junit_xml"
+}
