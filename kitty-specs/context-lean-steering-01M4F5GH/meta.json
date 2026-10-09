@@ -1,4 +1,16 @@
 {
+  "acceptance_history": [
+    {
+      "acceptance_mode": "pr",
+      "accepted_at": "2026-10-09T04:10:46.820652+00:00",
+      "accepted_by": "rob",
+      "accepted_from_commit": "08be503f734020907a61ca5b23b4915cd87d90e9"
+    }
+  ],
+  "acceptance_mode": "pr",
+  "accepted_at": "2026-10-09T04:10:46.820652+00:00",
+  "accepted_by": "rob",
+  "accepted_from_commit": "08be503f734020907a61ca5b23b4915cd87d90e9",
   "created_at": "2026-10-09T01:47:43.603386+00:00",
   "flattened": false,
   "friendly_name": "Context-lean steering: kernel + capsule + gates over the spec-kitty engine",
