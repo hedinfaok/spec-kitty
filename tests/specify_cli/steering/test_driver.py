@@ -65,6 +65,7 @@ class RecordingToolbox:
 
     gate_results: list[bool] = field(default_factory=list)
     calls: list[str] = field(default_factory=list)
+    task_ok_result: bool = True
 
     def execute(self, action: Action) -> ToolResult:
         self.calls.append(action.tool)
@@ -73,9 +74,18 @@ class RecordingToolbox:
             return ToolResult("REFUSED" if refused else "clean", refused=refused)
         return ToolResult(f"ok:{action.tool}")
 
+    def task_ok(self) -> bool:
+        return self.task_ok_result
+
 
 def _tool(tool: str, **args: object) -> str:
     return json.dumps({"tool": tool, "args": args})
+
+
+def _seed_complete_sandbox(root: Path) -> None:
+    """Seed a sandbox whose task is already complete (test passes, test file unmodified)."""
+    (root / "test_app.py").write_text(driver._SANDBOX_TEST, encoding="utf-8")
+    (root / "app.py").write_text("def add(a, b):\n    return a + b\n", encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------
@@ -172,6 +182,17 @@ def test_finish_on_a_refused_gate_is_a_surfaced_protocol_violation() -> None:
 
     assert report.finished is False, "a refused gate must not be accepted as a finish"
     assert report.protocol_violations == 1
+    assert any(record.tool == "finish" and record.refused for record in report.actions)
+
+
+def test_finish_on_an_incomplete_task_is_a_surfaced_protocol_violation() -> None:
+    model = ScriptedModel([_tool("finish"), _tool("finish")])
+    toolbox = RecordingToolbox(task_ok_result=False)
+
+    report = drive(mission="m", model="scripted", ask=model, toolbox=toolbox, seed="seed", turns=2)
+
+    assert report.finished is False, "finish must be refused while the task is incomplete"
+    assert report.protocol_violations >= 1
     assert any(record.tool == "finish" and record.refused for record in report.actions)
 
 
@@ -421,6 +442,7 @@ def test_run_reports_a_scored_json_transcript(monkeypatch: pytest.MonkeyPatch, t
     monkeypatch.setattr(driver, "_default_gate", lambda root, mission: [])
     monkeypatch.setattr(driver, "_default_fetch", lambda root, selector: "body")
     monkeypatch.setattr(driver, "HttpModelClient", _FakeClient)
+    _seed_complete_sandbox(tmp_path)
 
     driver.run("demo", model="x", turns=2, json_output=True)
 
@@ -436,6 +458,7 @@ def test_run_prints_a_human_score_card(monkeypatch: pytest.MonkeyPatch, tmp_path
     monkeypatch.setattr(driver, "_default_gate", lambda root, mission: [])
     monkeypatch.setattr(driver, "_default_fetch", lambda root, selector: "body")
     monkeypatch.setattr(driver, "HttpModelClient", _FakeClient)
+    _seed_complete_sandbox(tmp_path)
 
     driver.run("demo", model="x", turns=1, json_output=False)
 

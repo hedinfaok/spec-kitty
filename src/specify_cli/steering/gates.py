@@ -5,41 +5,45 @@ treats as binding: a refusal stops the loop, the agent fixes the cause and
 re-runs. This is the runtime mirror of ``steer kernel``'s third protocol rule
 ("invariants are machine gates").
 
-The registry **reuses the repository's existing checks through their existing
-entry points** rather than copying their logic:
+**Portability (this is the point).** A gate is only *applicable* when the
+repository actually has the thing it checks. A repo that does not use ``ruff``,
+or does not ship the canonical architectural nodes, is **skipped** — not
+refused. A repo that *has* a check but whose tool is missing or misbehaving is
+**refused** (fail loudly, never a silent pass). This lets ``steer`` run in any
+repository, not only the spec-kitty checkout.
 
-* *ruff* -- the ``ruff`` CLI (``check`` + ``format --check``), the same
-  command CI runs;
-* *terminology* -- the canonical architectural node
-  ``tests/architectural/test_no_legacy_terminology.py::test_forbidden_term_does_not_appear``;
-* *architectural layer rules* -- ``tests/architectural/test_layer_rules.py``.
+The registry:
 
-It adds the two invariants no existing check owns:
-
-* *protected branch* -- refuse to work when the current branch is ``main`` or
-  ``master``;
+* *protected branch* -- refuse on a branch the repo **explicitly** declares
+  protected (``protection.protected_branches`` in ``.kittify/config.yaml``).
+  Opt-in: when the key is absent the gate is skipped, because the authoritative
+  protection is ``ProtectionPolicy`` at commit time, not this mirror.
 * *engine guard* -- refuse when ``spec-kitty next --mission <handle> --json``
-  reports ``guard_failures``.
+  reports ``guard_failures`` (skipped when no Mission handle is given).
+* *repo gate* -- run the command the repo declares in
+  ``steer.gate_command`` (``.kittify/config.yaml``), so any repository can plug
+  in its own enforcement.
+* *ruff* -- ``ruff check`` + ``ruff format --check``, the CI entry points,
+  **only when the repo has a ruff config** (``ruff.toml`` / ``.ruff.toml`` /
+  ``[tool.ruff]`` in ``pyproject.toml``).
+* *terminology* / *architectural* -- the canonical spec-kitty architectural
+  nodes, **only when the repo ships them** (``tests/architectural/...``).
 
-Every wrapper is thin and **fails loudly**: a missing or misbehaving tool
-becomes a refusal, never a silent pass (the mission's central risk). A gate
-with no planted-violation case is reported by :func:`unverified_gate_ids`
-(NFR-005).
+Every wrapper is thin and fails loudly. A gate with no planted-violation case is
+reported by :func:`unverified_gate_ids` (NFR-005).
 """
 
 from __future__ import annotations
 
 import json
+import shlex
 import subprocess
 import sys
-from collections.abc import Callable, Collection, Sequence
+from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
 import typer
-
-#: Branches on which a gate refuses to let work proceed.
-_PROTECTED_BRANCHES = frozenset({"main", "master"})
 
 #: The lint/format tool, invoked as the ``ruff`` CLI (the CI entry point).
 _RUFF = "ruff"
@@ -49,9 +53,13 @@ _SPEC_KITTY = "spec-kitty"
 
 #: The canonical terminology check (a fast, narrow architectural node).
 _TERMINOLOGY_CHECK = "tests/architectural/test_no_legacy_terminology.py::test_forbidden_term_does_not_appear"
+_TERMINOLOGY_FILE = "tests/architectural/test_no_legacy_terminology.py"
 
 #: The canonical architectural layer-rule check.
 _ARCHITECTURAL_CHECK = "tests/architectural/test_layer_rules.py"
+
+#: The repository config that declares protected branches and a repo gate.
+_CONFIG = ".kittify/config.yaml"
 
 #: How many output lines a single refusal echoes back before summarising.
 _MAX_PROBLEM_LINES = 5
@@ -66,6 +74,10 @@ class ToolUnavailableError(RuntimeError):
 
 class EngineQueryError(RuntimeError):
     """``spec-kitty next --json`` failed to produce a usable decision."""
+
+
+class GateConfigError(RuntimeError):
+    """``.kittify/config.yaml`` could not be read for gate configuration."""
 
 
 @dataclass(frozen=True)
@@ -122,6 +134,46 @@ def _command_gate(argv: Sequence[str], cwd: Path, action: str) -> list[str]:
     return [f"{action} refused:", *(f"  {line}" for line in _first_lines(output))]
 
 
+def _load_config(root: Path) -> Mapping[str, object]:
+    """Load ``.kittify/config.yaml``; ``{}`` when absent, loud on malformed YAML."""
+    path = root / _CONFIG
+    if not path.is_file():
+        return {}
+    try:
+        from ruamel.yaml import YAML
+
+        data = YAML(typ="safe").load(path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001 - any parse failure is a loud refusal
+        raise GateConfigError(f"cannot read {_CONFIG}: {exc}") from exc
+    return data if isinstance(data, Mapping) else {}
+
+
+def _declared_protected_branches(root: Path) -> frozenset[str] | None:
+    """The repo's explicitly declared protected branches, or ``None`` when unset."""
+    config = _load_config(root)
+    protection = config.get("protection")
+    if not isinstance(protection, Mapping):
+        return None
+    branches = protection.get("protected_branches")
+    if not isinstance(branches, Sequence) or isinstance(branches, (str, bytes)):
+        return None
+    return frozenset(str(name) for name in branches)
+
+
+def _declared_gate_command(root: Path) -> list[str] | None:
+    """The repo's declared gate command (``steer.gate_command``), or ``None``."""
+    config = _load_config(root)
+    steer = config.get("steer")
+    if not isinstance(steer, Mapping):
+        return None
+    command = steer.get("gate_command")
+    if isinstance(command, str) and command.strip():
+        return shlex.split(command)
+    if isinstance(command, Sequence) and not isinstance(command, (str, bytes)) and command:
+        return [str(part) for part in command]
+    return None
+
+
 def _current_branch(root: Path) -> str:
     """Return the checked-out branch name, or ``""`` on a detached HEAD."""
     result = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=root)
@@ -164,12 +216,18 @@ def _next_decision(root: Path, mission: str) -> dict[str, object]:
 
 
 def _protected_branch_gate(target: GateTarget) -> list[str]:
-    """Refuse to work on ``main`` or ``master`` (validated spike rule R1)."""
+    """Refuse only on a branch the repo explicitly declares protected (opt-in)."""
+    try:
+        declared = _declared_protected_branches(target.root)
+    except GateConfigError as exc:
+        return [f"cannot read protection config; cannot verify: {exc}"]
+    if declared is None:
+        return []
     try:
         branch = _current_branch(target.root)
     except ToolUnavailableError as exc:
         return [f"cannot determine the current branch; cannot verify: {exc}"]
-    if branch in _PROTECTED_BRANCHES:
+    if branch in declared:
         return [f"refusing to work on protected branch {branch!r}"]
     return []
 
@@ -177,7 +235,7 @@ def _protected_branch_gate(target: GateTarget) -> list[str]:
 def _engine_guard_gate(target: GateTarget) -> list[str]:
     """Refuse when the engine reports guard failures for the Mission."""
     if target.mission is None:
-        return ["no Mission handle provided; cannot query the engine guards"]
+        return []
     try:
         decision = _next_decision(target.root, target.mission)
     except (ToolUnavailableError, EngineQueryError) as exc:
@@ -188,8 +246,29 @@ def _engine_guard_gate(target: GateTarget) -> list[str]:
     return []
 
 
+def _repo_gate(target: GateTarget) -> list[str]:
+    """Run the command the repository declares in ``steer.gate_command``."""
+    try:
+        command = _declared_gate_command(target.root)
+    except GateConfigError as exc:
+        return [f"cannot read gate config; cannot verify: {exc}"]
+    if not command:
+        return []
+    return _command_gate(command, target.root, "repo gate")
+
+
+def _has_ruff_config(root: Path) -> bool:
+    """True when the repository uses ruff (so the ruff gate is applicable)."""
+    if (root / "ruff.toml").is_file() or (root / ".ruff.toml").is_file():
+        return True
+    pyproject = root / "pyproject.toml"
+    return pyproject.is_file() and "[tool.ruff" in pyproject.read_text(encoding="utf-8", errors="replace")
+
+
 def _ruff_gate(target: GateTarget) -> list[str]:
-    """Reuse the CI ruff entry points: ``check`` and ``format --check``."""
+    """Reuse the CI ruff entry points, only when the repo uses ruff."""
+    if not _has_ruff_config(target.root):
+        return []
     problems = _command_gate([_RUFF, "check", "."], target.root, "lint")
     problems += _command_gate([_RUFF, "format", "--check", "."], target.root, "format check")
     return problems
@@ -201,12 +280,16 @@ def _pytest_argv(node: str) -> list[str]:
 
 
 def _terminology_gate(target: GateTarget) -> list[str]:
-    """Reuse the canonical forbidden-terminology architectural check."""
+    """Reuse the canonical terminology node, only when the repo ships it."""
+    if not (target.root / _TERMINOLOGY_FILE).is_file():
+        return []
     return _command_gate(_pytest_argv(_TERMINOLOGY_CHECK), target.root, "check")
 
 
 def _architectural_gate(target: GateTarget) -> list[str]:
-    """Reuse the canonical architectural layer-rule check."""
+    """Reuse the canonical architectural node, only when the repo ships it."""
+    if not (target.root / _ARCHITECTURAL_CHECK).is_file():
+        return []
     return _command_gate(_pytest_argv(_ARCHITECTURAL_CHECK), target.root, "check")
 
 
@@ -214,6 +297,7 @@ def _architectural_gate(target: GateTarget) -> list[str]:
 GATES: tuple[Gate, ...] = (
     Gate("protected-branch", _protected_branch_gate),
     Gate("engine-guard", _engine_guard_gate),
+    Gate("repo-gate", _repo_gate),
     Gate("ruff", _ruff_gate),
     Gate("terminology", _terminology_gate),
     Gate("architectural", _architectural_gate),
@@ -266,6 +350,7 @@ __all__ = [
     "GATES",
     "EngineQueryError",
     "Gate",
+    "GateConfigError",
     "GateTarget",
     "ToolUnavailableError",
     "run",

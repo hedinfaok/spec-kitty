@@ -77,6 +77,7 @@ _FORMAT_RETRY = 'No action found. Reply with at least one JSON object, for examp
 
 #: Result returned when ``finish`` is attempted on a refused gate.
 _GATE_REFUSED_FINISH = "REFUSED: cannot finish while the binding gate is refused. Fix the cause, run the gate again, then finish."
+_TASK_INCOMPLETE_FINISH = "REFUSED: cannot finish while the sandbox task is incomplete. The test must pass and the test file must stay unmodified, then finish."
 
 #: The synthetic compliance target a bare ``steer loop`` runs against -- the
 #: fixture the long-horizon spike validated. It lives only in a tempdir; the
@@ -239,6 +240,10 @@ class Toolbox(Protocol):
 
     def execute(self, action: Action) -> ToolResult: ...
 
+    def task_ok(self) -> bool:
+        """True when the loop's task is complete (the sandbox test passes, unmodified)."""
+        ...
+
 
 @dataclass(slots=True)
 class SandboxToolbox:
@@ -323,6 +328,17 @@ class SandboxToolbox:
             return ToolResult("clean")
         return ToolResult("REFUSED:\n" + "\n".join(problems) + "\nFix the cause, then re-run the gate.", refused=True)
 
+    def task_ok(self) -> bool:
+        """True when the sandbox task is complete: the test passes and its file is unmodified."""
+        test_file = self.root / "test_app.py"
+        if not test_file.is_file() or test_file.read_text(encoding="utf-8") != _SANDBOX_TEST:
+            return False
+        try:
+            result = subprocess.run(list(self.test_argv), cwd=self.root, capture_output=True, text=True, check=False)
+        except FileNotFoundError:
+            return False
+        return result.returncode == 0
+
 
 # ---------------------------------------------------------------------------
 # The loop (T020)
@@ -371,6 +387,22 @@ class LoopReport:
         }
 
 
+def _finish_refusal(gate_refused: bool, toolbox: Toolbox) -> str | None:
+    """Return a refusal message when ``finish`` is not yet allowed, else ``None``.
+
+    ``finish`` is refused while the binding gate is refused (the agent must fix
+    the cause) and while the loop's task is incomplete (the sandbox test must
+    pass and its file must stay unmodified). The task check is skipped for a
+    toolbox that does not implement ``task_ok`` (test doubles).
+    """
+    if gate_refused:
+        return _GATE_REFUSED_FINISH
+    task_ok = getattr(toolbox, "task_ok", None)
+    if callable(task_ok) and not task_ok():
+        return _TASK_INCOMPLETE_FINISH
+    return None
+
+
 def drive(*, mission: str, model: str, ask: ModelCall, toolbox: Toolbox, seed: str, turns: int) -> LoopReport:
     """Run the render -> call -> execute -> report cycle, bounded by *turns*.
 
@@ -397,10 +429,11 @@ def drive(*, mission: str, model: str, ask: ModelCall, toolbox: Toolbox, seed: s
             continue
         for action in parsed.actions:
             if action.tool == "finish":
-                if gate_refused:
+                refusal = _finish_refusal(gate_refused, toolbox)
+                if refusal is not None:
                     protocol_violations += 1
-                    records.append(ExecutedAction(turn, "finish", action.args, _GATE_REFUSED_FINISH, refused=True))
-                    messages.append({"role": "user", "content": _GATE_REFUSED_FINISH})
+                    records.append(ExecutedAction(turn, "finish", action.args, refusal, refused=True))
+                    messages.append({"role": "user", "content": refusal})
                     continue
                 records.append(ExecutedAction(turn, "finish", action.args, "FINISHED"))
                 finished = True
