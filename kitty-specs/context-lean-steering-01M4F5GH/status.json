@@ -147,7 +147,8 @@
       "last_transition_at": "2026-10-09T03:15:22.889922+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
-        "Ready for review"
+        "Ready for review",
+        "Addressed review feedback: description shortened to <=180 chars"
       ],
       "provider": "__resolved_provider_absent__",
       "review": null,
