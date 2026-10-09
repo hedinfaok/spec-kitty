@@ -1,6 +1,6 @@
 ---
 title: 'ADR: inside a budget-constrained capsule, `requires` doctrine ships as fetch pointers, not inline bodies'
-description: 'The lean steering capsule names each `requires`-closure artefact as a `{selector, when}` fetch pointer and retrieves bodies on demand through `charter context --include`; this partially supersedes the requires-eager inline clause of ADR 2026-07-28-1 while preserving fetchability, link-only `suggests`, and canonical retrieval.'
+description: 'Inside the ≤2 KB steering capsule, `requires` doctrine ships as `{selector, when}` fetch pointers rather than inline bodies, partially superseding ADR 2026-07-28-1.'
 status: Accepted
 date: '2026-10-09'
 ---
