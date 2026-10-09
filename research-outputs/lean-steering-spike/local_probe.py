@@ -3,18 +3,19 @@
 Calls the unsloth-studio OpenAI-compatible endpoint with the same four conditions used in
 the subagent experiment, to remove the harness's auto-compaction from the measurement.
 
-Run: ``python3 local_probe.py`` (requires the local server on 127.0.0.1:8888).
+Run: ``python3 local_probe.py [--model <id>]`` (requires the local server on 127.0.0.1:8888).
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import time
 import urllib.request
 from pathlib import Path
 
 ENDPOINT = "http://127.0.0.1:8888/v1/chat/completions"
-MODEL = "unsloth/DeepSeek-V4-Flash-0731-GGUF"
+DEFAULT_MODEL = "unsloth/DeepSeek-V4-Flash-0731-GGUF"
 
 KERNEL = (Path(__file__).resolve().parent / "kernel.md").read_text(encoding="utf-8").strip()
 
@@ -86,9 +87,9 @@ CONDITIONS = {
 }
 
 
-def ask(prompt: str) -> str:
+def ask(prompt: str, model: str) -> str:
     """Send one prompt to the local model and return its answer."""
-    payload = {"model": MODEL, "messages": [{"role": "user", "content": prompt}], "max_tokens": 700, "temperature": 0}
+    payload = {"model": model, "messages": [{"role": "user", "content": prompt}], "max_tokens": 700, "temperature": 0}
     body = json.dumps(payload).encode()
     request = urllib.request.Request(ENDPOINT, data=body, headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(request, timeout=600) as response:
@@ -97,12 +98,16 @@ def ask(prompt: str) -> str:
 
 
 def main() -> None:
-    """Run all four conditions and print the answers."""
+    """Run all four conditions against the chosen model and print the answers."""
+    parser = argparse.ArgumentParser(description="Probe a local model with the four lean-steering conditions.")
+    parser.add_argument("--model", default=DEFAULT_MODEL, help="Model id served by the local endpoint.")
+    args = parser.parse_args()
+    print(f"model: {args.model}")
     for name, prompt in CONDITIONS.items():
         start = time.time()
         print(f"\n{'=' * 70}\n{name}  (prompt {len(prompt)} chars)\n{'=' * 70}")
         try:
-            print(ask(prompt).strip())
+            print(ask(prompt, args.model).strip())
         except Exception as exc:
             print(f"ERROR: {type(exc).__name__}: {exc}")
         print(f"[{time.time() - start:.1f}s]")
