@@ -13,6 +13,10 @@ Four fresh agents (no shared context between them), each given only text from th
 message, each instructed **not to use tools, read files, or run commands**, and to echo
 "NOT IN CAPSULE" where the text lacks an answer.
 
+**Model under test:** all four runs used `opencode-go/deepseek-v4.1-flash` (variant
+`high`) — the harness default. Recorded because it is material: the result describes
+*this* model, not every model. Total cost of the four runs was ~5,400 tokens (~$0.0019).
+
 | Run | Condition | Text given |
 |---|---|---|
 | B1 | kernel + capsule | ~1.4 KB |
@@ -66,6 +70,10 @@ does not reward guessing.
 
 ## Caveats
 
+- **One model only — and a frontier-tier one.** Every run used
+  `opencode-go/deepseek-v4.1-flash` (high). A capable model orienting itself from 1.4 KB
+  does **not** prove a small local model can; the community's 30B-MoE target needs its own
+  run. This is the single most important limit for the consumer-hardware goal.
 - **Isolation is not absolute.** The sub-agents ran inside a harness that may inject its
   own system prompt/`AGENTS.md`. But every scored fact is mission-specific and absent from
   the standing corpus, so correct answers demonstrate the capsule carried them; and the
