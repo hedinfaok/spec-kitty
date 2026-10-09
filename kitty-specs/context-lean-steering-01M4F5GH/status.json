@@ -138,7 +138,7 @@
     },
     "WP08": {
       "actor": "opencode",
-      "agent": "opencode",
+      "agent": null,
       "agent_profile": "reviewer-renata",
       "agent_profile_version": "1.0",
       "force_count": 1,
@@ -150,6 +150,7 @@
         "Ready for review"
       ],
       "provider": "__resolved_provider_absent__",
+      "review": null,
       "review_result": {
         "feedback_path": "/home/rob/code/spec-kitty/kitty-specs/context-lean-steering-01M4F5GH/tasks/WP08-requires-inline-divergence-adr/review-cycle-1.md",
         "reference": "review-cycle://context-lean-steering-01M4F5GH/WP08-requires-inline-divergence-adr/review-cycle-1.md",
@@ -157,12 +158,12 @@
         "verdict": "changes_requested"
       },
       "role": "reviewer",
-      "shell_pid": 150174,
-      "shell_pid_created_at": "1791515309.44",
+      "shell_pid": null,
+      "shell_pid_created_at": null,
       "subtasks": {
-        "T029": "done",
-        "T030": "done",
-        "T031": "done"
+        "T029": "planned",
+        "T030": "planned",
+        "T031": "planned"
       }
     }
   }
