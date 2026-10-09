@@ -1,7 +1,7 @@
 {
-  "event_count": 44,
-  "last_event_id": "01M4FCJT9E94YQEH44FQV9SVGS",
-  "materialized_at": "2026-10-09T03:51:18.574842+00:00",
+  "event_count": 45,
+  "last_event_id": "01M4FCKSANRDGDXSDACYVYSB1V",
+  "materialized_at": "2026-10-09T03:51:50.357377+00:00",
   "mission_number": "",
   "mission_slug": "context-lean-steering-01M4F5GH",
   "mission_type": "software-dev",
@@ -11,9 +11,9 @@
     "canceled": 0,
     "claimed": 0,
     "done": 0,
-    "for_review": 2,
+    "for_review": 1,
     "in_progress": 0,
-    "in_review": 0,
+    "in_review": 1,
     "planned": 1
   },
   "work_packages": {
@@ -142,20 +142,20 @@
     "WP05": {
       "actor": "opencode",
       "agent": "opencode",
-      "agent_profile": "python-pedro",
+      "agent_profile": "reviewer-renata",
       "agent_profile_version": "1.0",
       "force_count": 0,
-      "lane": "for_review",
-      "last_event_id": "01M4FCJT9E94YQEH44FQV9SVGS",
-      "last_transition_at": "2026-10-09T03:51:18.574842+00:00",
+      "lane": "in_review",
+      "last_event_id": "01M4FCKSANRDGDXSDACYVYSB1V",
+      "last_transition_at": "2026-10-09T03:51:50.357377+00:00",
       "model": "__resolved_model_absent__",
       "notes": [
         "Ready for review"
       ],
       "provider": "__resolved_provider_absent__",
-      "role": "implementer",
-      "shell_pid": 189302,
-      "shell_pid_created_at": "1791516816.12",
+      "role": "reviewer",
+      "shell_pid": 222038,
+      "shell_pid_created_at": "1791517902.86",
       "subtasks": {
         "T019": "done",
         "T020": "done",
